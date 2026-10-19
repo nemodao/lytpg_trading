@@ -242,29 +242,106 @@ GROUP BY login_id</pre>
   <li>A field whose value is <code>null</code> may be returned explicitly or omitted; the front-end treats both the same.</li>
   <li>Decimals may be returned as <code>70.0</code>.</li>
 </ul>
-<div class="specsrc" id="spec-api-get" data-title="tradingTask/get" hidden><p class="specmeta">POST <code>/pointSys/app/point/tradingTask/get</code> · Token</p><p>Program info, today's summary and the client's accounts (Earn page, trading card).</p><div class="specsec"><h4>1. Request</h4><div class="scroll"><table><tr><th style="width:30%">Field</th><th style="width:16%">Type</th><th>Meaning</th></tr><tr><td><code>clientId</code></td><td>long</td><td>Logged-in client. Must match the token.</td></tr><tr><td><code>currentTime</code></td><td>long, seconds</td><td>For testing only: simulates the current time (epoch seconds). If not sent, server time is used. Invalid value → <code>INVALID_CURRENT_TIME</code>.</td></tr></table></div></div><div class="specsec"><h4>2. Response</h4><div class="scroll"><table><tr><th style="width:30%">Field</th><th style="width:16%">Type</th><th>Meaning</th></tr><tr><td><code>tradingTask</code></td><td>bool</td><td><code>false</code> = the client has no program (only this field is returned).</td></tr><tr><td><code>program.ended</code></td><td>bool</td><td>The program has a limited participation period and its end time has passed.</td></tr><tr><td><code>program.creditMode</code></td><td>string</td><td><code>in-day</code> (coins credited within the day) or <code>delayed</code> (coins credited after N days).</td></tr><tr><td><code>program.minHoldSeconds</code></td><td>int</td><td>Minimum position holding time, seconds.</td></tr><tr><td><code>program.minHoldMinutes</code></td><td>int</td><td>Same as above in minutes, rounded down.</td></tr><tr><td><code>program.creditDelayDays</code></td><td>int</td><td>Waiting days in <code>delayed</code> mode; 0 in <code>in-day</code> mode.</td></tr><tr><td><code>program.expiryDays</code></td><td>int</td><td>Number of days coins stay valid.</td></tr><tr><td><code>program.dailyMaxPoints</code></td><td>long | null</td><td>Daily coin cap per client. <code>null</code> = no cap.</td></tr><tr><td><code>program.tzMinutes</code></td><td>int</td><td>Program time zone, used to split days.</td></tr><tr><td><code>program.termsUrl</code></td><td>string | null</td><td>Terms PDF link, returned as is. <code>null</code> or empty string = none.</td></tr><tr><td><code>program.rateRange</code></td><td>{min, max} | null</td><td>Lowest and highest coins-per-lot rate across all rate rows of the program.</td></tr><tr><td><code>today.periodKey</code></td><td>yyyy-MM-dd</td><td>Today in the program time zone.</td></tr><tr><td><code>today.lots</code></td><td>decimal</td><td>Total lots of deals counted today.</td></tr><tr><td><code>today.lotsValid</code></td><td>decimal</td><td>Lots of deals whose coins are already in the wallet.</td></tr><tr><td><code>today.points</code></td><td>long</td><td>Coins credited to the wallet today.</td></tr><tr><td><code>today.capped</code></td><td>bool</td><td>Daily cap reached.</td></tr><tr><td><code>today.status</code></td><td>string</td><td><code>not_started</code> / <code>pending</code> / <code>earning</code> / <code>credited</code> (see rules).</td></tr><tr><td><code>today.creditAt</code></td><td>ISO UTC | null</td><td>Expected credit time, only when <code>pending</code>.</td></tr><tr><td><code>today.updatedAt</code></td><td>ISO UTC | null</td><td>Last update.</td></tr><tr><td><code>selectedAccountId</code></td><td>long</td><td>Preselected account = first element of <code>accounts</code>. Absent when <code>accounts</code> is empty.</td></tr><tr><td><code>accounts[].id</code></td><td>long</td><td>Real trading account number.</td></tr><tr><td><code>accounts[].eligible</code></td><td>bool</td><td>The account's MT5 group has rate rows in the program.</td></tr><tr><td><code>accounts[].rates[]</code></td><td>{type, value, ptsPerLot}</td><td>Rate table of the account. <code>type</code> = <code>symbol</code> / <code>symbol_group</code> / <code>any</code>.</td></tr><tr class="rvnew"><td><code>accounts[].group</code> <span class="pending">NEW</span></td><td>string</td><td>The account's MT5 group, full name as is (e.g. <code>Direct\VIP1</code>). Present on every account.</td></tr><tr class="rvnew"><td><code>accounts[].lifetimeDeposit</code> <span class="pending">NEW</span></td><td>decimal, USD</td><td>Total approved deposits of the account. Never deposited = 0.</td></tr><tr class="rvnew"><td><code>tiers[]</code> <span class="pending">NEW</span></td><td>{group, rates[]}</td><td>One element per MT5 group that has rate rows in the program; <code>rates</code> has the same shape as <code>accounts[].rates</code>.</td></tr></table></div><p class="specmeta">Example:</p><pre>{
-  "tradingTask": true,
-  "program": {
-    "ended": false, "creditMode": "in-day", "minHoldSeconds": 180, "minHoldMinutes": 3,
-    "creditDelayDays": 0, "expiryDays": 180, "dailyMaxPoints": 2000, "tzMinutes": 420,
-    "termsUrl": "https://.../terms.pdf", "rateRange": { "min": 70, "max": 100 }
+<div class="specsrc" id="spec-api-get" data-title="tradingTask/get" hidden><p class="specmeta">POST <code>/pointSys/app/point/tradingTask/get</code> · Token</p><p>Program info, today's summary and the client's accounts (Earn page, trading card).</p><div class="specsec"><h4>1. Request</h4><div class="scroll"><table><tr><th style="width:30%">Field</th><th style="width:16%">Type</th><th>Meaning</th></tr><tr><td><code>clientId</code></td><td>long</td><td>Logged-in client. Must match the token.</td></tr><tr><td><code>currentTime</code></td><td>long, seconds</td><td>For testing only: simulates the current time (epoch seconds). If not sent, server time is used. Invalid value → <code>INVALID_CURRENT_TIME</code>.</td></tr></table></div></div><div class="specsec"><h4>2. Response</h4><div class="scroll"><table><tr><th style="width:30%">Field</th><th style="width:16%">Type</th><th>Meaning</th></tr><tr><td><code>tradingTask</code></td><td>bool</td><td><code>false</code> = the client has no program (only this field is returned).</td></tr><tr><td><code>program.ended</code></td><td>bool</td><td>The program has a limited participation period and its end time has passed.</td></tr><tr><td><code>program.creditMode</code></td><td>string</td><td><code>in-day</code> (coins credited within the day) or <code>delayed</code> (coins credited after N days).</td></tr><tr><td><code>program.minHoldSeconds</code></td><td>int</td><td>Minimum position holding time, seconds.</td></tr><tr><td><code>program.minHoldMinutes</code></td><td>int</td><td>Same as above in minutes, rounded down.</td></tr><tr><td><code>program.creditDelayDays</code></td><td>int</td><td>Waiting days in <code>delayed</code> mode; 0 in <code>in-day</code> mode.</td></tr><tr><td><code>program.expiryDays</code></td><td>int</td><td>Number of days coins stay valid.</td></tr><tr><td><code>program.dailyMaxPoints</code></td><td>long | null</td><td>Daily coin cap per client. <code>null</code> = no cap.</td></tr><tr><td><code>program.tzMinutes</code></td><td>int</td><td>Program time zone, used to split days.</td></tr><tr><td><code>program.termsUrl</code></td><td>string | null</td><td>Terms PDF link, returned as is. <code>null</code> or empty string = none.</td></tr><tr><td><code>program.rateRange</code></td><td>{min, max} | null</td><td>Lowest and highest coins-per-lot rate across all rate rows of the program.</td></tr><tr><td><code>today.periodKey</code></td><td>yyyy-MM-dd</td><td>Today in the program time zone.</td></tr><tr><td><code>today.lots</code></td><td>decimal</td><td>Total lots of deals counted today.</td></tr><tr><td><code>today.lotsValid</code></td><td>decimal</td><td>Lots of deals whose coins are already in the wallet.</td></tr><tr><td><code>today.points</code></td><td>long</td><td>Coins credited to the wallet today.</td></tr><tr><td><code>today.capped</code></td><td>bool</td><td>Daily cap reached.</td></tr><tr><td><code>today.status</code></td><td>string</td><td><code>not_started</code> / <code>pending</code> / <code>earning</code> / <code>credited</code> (see rules).</td></tr><tr><td><code>today.creditAt</code></td><td>ISO UTC | null</td><td>Expected credit time, only when <code>pending</code>.</td></tr><tr><td><code>today.updatedAt</code></td><td>ISO UTC | null</td><td>Last update.</td></tr><tr><td><code>selectedAccountId</code></td><td>long</td><td>Preselected account = first element of <code>accounts</code>. Absent when <code>accounts</code> is empty.</td></tr><tr><td><code>accounts[].id</code></td><td>long</td><td>Real trading account number.</td></tr><tr><td><code>accounts[].eligible</code></td><td>bool</td><td>The account's MT5 group has rate rows in the program.</td></tr><tr><td><code>accounts[].rates[]</code></td><td>{type, value, ptsPerLot}</td><td>Rate table of the account. <code>type</code> = <code>symbol</code> / <code>symbol_group</code> / <code>any</code>.</td></tr><tr class="rvnew"><td><code>accounts[].group</code> <span class="pending">NEW</span></td><td>string</td><td>The account's MT5 group, full name as is (e.g. <code>Direct\VIP1</code>). Present on every account.</td></tr><tr class="rvnew"><td><code>accounts[].lifetimeDeposit</code> <span class="pending">NEW</span></td><td>decimal, USD</td><td>Total approved deposits of the account. Never deposited = 0.</td></tr><tr class="rvnew"><td><code>tiers[]</code> <span class="pending">NEW</span></td><td>{group, rates[]}</td><td>One element per MT5 group that has rate rows in the program; <code>rates</code> has the same shape as <code>accounts[].rates</code>.</td></tr></table></div><p class="specmeta">Full response, including the envelope. The front-end maps exactly this shape: keep the name, position and type of every field; fields whose value is <code>null</code> are still returned.</p><pre>{
+  "success": true,
+  "code": 200,
+  "message": "",
+  "result": {
+    "tradingTask": true,
+    "program": {
+      "ended": false,
+      "creditMode": "in-day",
+      "minHoldSeconds": 180,
+      "minHoldMinutes": 3,
+      "creditDelayDays": 0,
+      "expiryDays": 180,
+      "dailyMaxPoints": 2000,
+      "tzMinutes": 420,
+      "termsUrl": "https://.../terms.pdf",
+      "rateRange": { "min": 70.0, "max": 100.0 }
+    },
+    "today": {
+      "periodKey": "2026-10-14",
+      "lots": 3.0,
+      "lotsValid": 2.0,
+      "points": 160,
+      "status": "earning",
+      "creditAt": null,
+      "updatedAt": "2026-10-14T09:37:24Z",
+      "capped": false
+    },
+    "selectedAccountId": 31000001,
+    "accounts": [
+      {
+        "id": 31000001,
+        "eligible": true,
+        "group": "Direct\\Mini400",
+        "lifetimeDeposit": 150.0,
+        "rates": [
+          { "type": "symbol_group", "value": "energy", "ptsPerLot": 70.0 },
+          { "type": "symbol_group", "value": "forex",  "ptsPerLot": 70.0 },
+          { "type": "symbol_group", "value": "index",  "ptsPerLot": 70.0 },
+          { "type": "symbol_group", "value": "metal",  "ptsPerLot": 70.0 },
+          { "type": "any",          "value": "other",  "ptsPerLot": 70.0 }
+        ]
+      },
+      {
+        "id": 31000002,
+        "eligible": true,
+        "group": "Direct\\VIP1",
+        "lifetimeDeposit": 1250.0,
+        "rates": [ "...5 rows, ptsPerLot 90.0..." ]
+      },
+      {
+        "id": 31000003,
+        "eligible": false,
+        "group": "1F\\Direct\\Mini10",
+        "lifetimeDeposit": 0,
+        "rates": []
+      }
+    ],
+    "tiers": [
+      { "group": "Direct\\Mini400", "rates": [ "...same 5 rows as account 31000001..." ] },
+      { "group": "Direct\\Mini10",  "rates": [ "...5 rows, ptsPerLot 80.0..." ] },
+      { "group": "Direct\\VIP1",    "rates": [ "...5 rows, ptsPerLot 90.0..." ] },
+      { "group": "Direct\\MIVIP",   "rates": [ "...5 rows, ptsPerLot 100.0..." ] }
+    ]
   },
-  "today": {
-    "periodKey": "2026-10-14", "lots": 3.0, "lotsValid": 2.0, "points": 160,
-    "capped": false, "status": "earning", "creditAt": null, "updatedAt": "2026-10-14T09:37:24Z"
+  "extraData": null,
+  "timestamp": 1791970217315
+}</pre><p class="specmeta">When there is no program:</p><pre>{ "success": true, "code": 200, "message": "", "result": { "tradingTask": false }, "extraData": null, "timestamp": 1791970217315 }</pre></div><div class="specsec"><h4>3. Rules</h4><ul class="rules"><li>Program selection: client group (<code>group_code</code>) → <code>promo_client_group</code> → program → task bundle → trading task; all 4 levels enabled; filtered by book type, display trigger (<code>display_event</code>), display period, hide-to-all flag, blacklist. Several qualifying tasks → the smallest id.</li><li>A program past its participation end time is still returned, with <code>ended = true</code>.</li><li><code>today.status</code>: release time still in the future → <code>pending</code>; coins still waiting and cap not reached → <code>earning</code>; otherwise → <code>credited</code>; no daily data → <code>not_started</code>.</li><li><code>accounts</code>: the client's real, non-deleted accounts; the MT5 group is read from <code>mt5_users</code> on every call (the group field in <code>bo_client_logins</code> is not used). Order: <code>eligible</code> first, then account number ascending.</li><li><code>rates</code>: only rows with <code>ptsPerLot</code> &gt; 0; <code>symbol</code> / <code>symbol_group</code> rows first, rate descending; the <code>any</code> row last.</li></ul></div></div><div class="specsrc" id="spec-api-guest" data-title="guest/tradingTask/get" hidden><p class="specmeta">POST <code>/pointSys/app/point/guest/tradingTask/get</code> · No token</p><p>Version for guests (not logged in): program rules, no personal data.</p><div class="specsec"><h4>1. Request</h4><div class="scroll"><table><tr><th style="width:30%">Field</th><th style="width:16%">Type</th><th>Meaning</th></tr><tr class="rvnew"><td><code>currentTime</code> <span class="pending">NEW</span></td><td>long, seconds</td><td>For testing only, like the other APIs.</td></tr></table></div></div><div class="specsec"><h4>2. Response</h4><div class="scroll"><table><tr><th style="width:30%">Field</th><th style="width:16%">Type</th><th>Meaning</th></tr><tr class="rvnew"><td><code>*</code> <span class="pending">NEW</span></td><td></td><td>Same structure as <code>tradingTask/get</code>. <code>today</code> fixed at <code>not_started</code>, all numbers 0; <code>accounts = []</code>; no <code>selectedAccountId</code>, no <code>tiers</code>.</td></tr></table></div><p class="specmeta">Full response, including the envelope. The front-end maps exactly this shape: keep the name, position and type of every field; fields whose value is <code>null</code> are still returned.</p><pre>{
+  "success": true,
+  "code": 200,
+  "message": "",
+  "result": {
+    "tradingTask": true,
+    "program": {
+      "ended": false,
+      "creditMode": "in-day",
+      "minHoldSeconds": 180,
+      "minHoldMinutes": 3,
+      "creditDelayDays": 0,
+      "expiryDays": 180,
+      "dailyMaxPoints": 2000,
+      "tzMinutes": 420,
+      "termsUrl": "https://.../terms.pdf",
+      "rateRange": { "min": 70.0, "max": 100.0 }
+    },
+    "today": {
+      "periodKey": "2026-10-19",
+      "lots": 0,
+      "lotsValid": 0,
+      "points": 0,
+      "status": "not_started",
+      "creditAt": null,
+      "updatedAt": null,
+      "capped": false
+    },
+    "accounts": []
   },
-  "selectedAccountId": 31000001,
-  "accounts": [
-    { "id": 31000001, "eligible": true, "group": "Direct\\Mini400", "lifetimeDeposit": 150.0,
-      "rates": [ { "type": "symbol_group", "value": "metal", "ptsPerLot": 70 },
-                 { "type": "any", "value": "other", "ptsPerLot": 70 } ] },
-    { "id": 31000002, "eligible": false, "group": "1F\\Direct\\Mini10", "lifetimeDeposit": 0, "rates": [] }
-  ],
-  "tiers": [
-    { "group": "Direct\\Mini400", "rates": [ { "type": "symbol_group", "value": "metal", "ptsPerLot": 70 }, "..." ] },
-    { "group": "Direct\\VIP1",    "rates": [ "..." ] }
-  ]
-}</pre></div><div class="specsec"><h4>3. Rules</h4><ul class="rules"><li>Program selection: client group (<code>group_code</code>) → <code>promo_client_group</code> → program → task bundle → trading task; all 4 levels enabled; filtered by book type, display trigger (<code>display_event</code>), display period, hide-to-all flag, blacklist. Several qualifying tasks → the smallest id.</li><li>A program past its participation end time is still returned, with <code>ended = true</code>.</li><li><code>today.status</code>: release time still in the future → <code>pending</code>; coins still waiting and cap not reached → <code>earning</code>; otherwise → <code>credited</code>; no daily data → <code>not_started</code>.</li><li><code>accounts</code>: the client's real, non-deleted accounts; the MT5 group is read from <code>mt5_users</code> on every call (the group field in <code>bo_client_logins</code> is not used). Order: <code>eligible</code> first, then account number ascending.</li><li><code>rates</code>: only rows with <code>ptsPerLot</code> &gt; 0; <code>symbol</code> / <code>symbol_group</code> rows first, rate descending; the <code>any</code> row last.</li></ul></div></div><div class="specsrc" id="spec-api-guest" data-title="guest/tradingTask/get" hidden><p class="specmeta">POST <code>/pointSys/app/point/guest/tradingTask/get</code> · No token</p><p>Version for guests (not logged in): program rules, no personal data.</p><div class="specsec"><h4>1. Request</h4><div class="scroll"><table><tr><th style="width:30%">Field</th><th style="width:16%">Type</th><th>Meaning</th></tr><tr class="rvnew"><td><code>currentTime</code> <span class="pending">NEW</span></td><td>long, seconds</td><td>For testing only, like the other APIs.</td></tr></table></div></div><div class="specsec"><h4>2. Response</h4><div class="scroll"><table><tr><th style="width:30%">Field</th><th style="width:16%">Type</th><th>Meaning</th></tr><tr class="rvnew"><td><code>*</code> <span class="pending">NEW</span></td><td></td><td>Same structure as <code>tradingTask/get</code>. <code>today</code> fixed at <code>not_started</code>, all numbers 0; <code>accounts = []</code>; no <code>selectedAccountId</code>, no <code>tiers</code>.</td></tr></table></div></div><div class="specsec"><h4>3. Rules</h4><ul class="rules"><li>No token check, no <code>clientId</code> needed; a <code>clientId</code> in the request is ignored. <code>x-auth-key</code> is still checked.</li><li>Reuse the program selection of <code>tradingTask/get</code> with fixed parameters: client group <code>direct_client</code> (hard-coded), book type 9, KYC / first deposit / first trade times = 0, <code>clientId</code> = null. No SQL change needed.</li><li>Result: only programs with <code>display_event = signup</code> are shown; programs hidden from everyone are not shown; the blacklist does not apply.</li></ul><p class="specmeta">Equivalent SQL:</p><pre>-- Equivalent SQL of guest/tradingTask/get (read only). No row =&gt; {"tradingTask": false}
+  "extraData": null,
+  "timestamp": 1792396800000
+}</pre><p class="specmeta">When there is no program:</p><pre>{ "success": true, "code": 200, "message": "", "result": { "tradingTask": false }, "extraData": null, "timestamp": 1791970217315 }</pre></div><div class="specsec"><h4>3. Rules</h4><ul class="rules"><li>No token check, no <code>clientId</code> needed; a <code>clientId</code> in the request is ignored. <code>x-auth-key</code> is still checked.</li><li>Reuse the program selection of <code>tradingTask/get</code> with fixed parameters: client group <code>direct_client</code> (hard-coded), book type 9, KYC / first deposit / first trade times = 0, <code>clientId</code> = null. No SQL change needed.</li><li>Result: only programs with <code>display_event = signup</code> are shown; programs hidden from everyone are not shown; the blacklist does not apply.</li></ul><p class="specmeta">Equivalent SQL:</p><pre>-- Equivalent SQL of guest/tradingTask/get (read only). No row =&gt; {"tradingTask": false}
 SET @now = UTC_TIMESTAMP();
 
 SELECT d.*,                                   -- program fields are built from this row
@@ -502,29 +579,106 @@ GROUP BY login_id</pre>
   <li>值为 <code>null</code> 的字段可能显式返回，也可能省略；前端按同样方式处理。</li>
   <li>小数可能以 <code>70.0</code> 形式返回。</li>
 </ul>
-<div class="specsrc" id="spec-api-get" data-title="tradingTask/get" hidden><p class="specmeta">POST <code>/pointSys/app/point/tradingTask/get</code> · Token</p><p>任务信息、今日汇总及客户账户（Earn 页、交易卡片）。</p><div class="specsec"><h4>1. Request</h4><div class="scroll"><table><tr><th style="width:30%">字段</th><th style="width:16%">类型</th><th>含义</th></tr><tr><td><code>clientId</code></td><td>long</td><td>当前登录客户，必须与 token 一致。</td></tr><tr><td><code>currentTime</code></td><td>long，秒</td><td>仅测试用：模拟当前时间（秒级时间戳）。不传则用服务器时间。非法值 → <code>INVALID_CURRENT_TIME</code>。</td></tr></table></div></div><div class="specsec"><h4>2. Response</h4><div class="scroll"><table><tr><th style="width:30%">字段</th><th style="width:16%">类型</th><th>含义</th></tr><tr><td><code>tradingTask</code></td><td>bool</td><td><code>false</code> = 客户没有可参加的任务（只返回该字段）。</td></tr><tr><td><code>program.ended</code></td><td>bool</td><td>任务有限定参与时间，且已过结束时间。</td></tr><tr><td><code>program.creditMode</code></td><td>string</td><td><code>in-day</code>（当日发放）或 <code>delayed</code>（N 天后发放）。</td></tr><tr><td><code>program.minHoldSeconds</code></td><td>int</td><td>最短持仓时间，秒。</td></tr><tr><td><code>program.minHoldMinutes</code></td><td>int</td><td>同上，换算为分钟，向下取整。</td></tr><tr><td><code>program.creditDelayDays</code></td><td>int</td><td><code>delayed</code> 模式下的延迟天数；<code>in-day</code> 模式下为 0。</td></tr><tr><td><code>program.expiryDays</code></td><td>int</td><td>积分有效天数。</td></tr><tr><td><code>program.dailyMaxPoints</code></td><td>long | null</td><td>每位客户每日积分上限。<code>null</code> = 不设上限。</td></tr><tr><td><code>program.tzMinutes</code></td><td>int</td><td>任务时区，用于划分日期。</td></tr><tr><td><code>program.termsUrl</code></td><td>string | null</td><td>条款 PDF 链接，原样返回。<code>null</code> 或空字符串 = 无。</td></tr><tr><td><code>program.rateRange</code></td><td>{min, max} | null</td><td>任务所有费率行中每手积分的最低值和最高值。</td></tr><tr><td><code>today.periodKey</code></td><td>yyyy-MM-dd</td><td>按任务时区的今天。</td></tr><tr><td><code>today.lots</code></td><td>decimal</td><td>今日已计算交易的总手数。</td></tr><tr><td><code>today.lotsValid</code></td><td>decimal</td><td>积分已发放到钱包的交易手数。</td></tr><tr><td><code>today.points</code></td><td>long</td><td>今日已发放到钱包的积分。</td></tr><tr><td><code>today.capped</code></td><td>bool</td><td>已达每日上限。</td></tr><tr><td><code>today.status</code></td><td>string</td><td><code>not_started</code> / <code>pending</code> / <code>earning</code> / <code>credited</code>（见规则）。</td></tr><tr><td><code>today.creditAt</code></td><td>ISO UTC | null</td><td>预计发放时间，仅在 <code>pending</code> 时返回。</td></tr><tr><td><code>today.updatedAt</code></td><td>ISO UTC | null</td><td>最近更新时间。</td></tr><tr><td><code>selectedAccountId</code></td><td>long</td><td>默认选中账户 = <code>accounts</code> 的第一个元素。<code>accounts</code> 为空时不返回。</td></tr><tr><td><code>accounts[].id</code></td><td>long</td><td>真实交易账号。</td></tr><tr><td><code>accounts[].eligible</code></td><td>bool</td><td>该账户的 MT5 组在任务中配置了费率。</td></tr><tr><td><code>accounts[].rates[]</code></td><td>{type, value, ptsPerLot}</td><td>该账户的费率表。<code>type</code> = <code>symbol</code> / <code>symbol_group</code> / <code>any</code>。</td></tr><tr class="rvnew"><td><code>accounts[].group</code> <span class="pending">NEW</span></td><td>string</td><td>该账户的 MT5 组，原样返回完整组名（如 <code>Direct\VIP1</code>）。所有账户都返回。</td></tr><tr class="rvnew"><td><code>accounts[].lifetimeDeposit</code> <span class="pending">NEW</span></td><td>decimal, USD</td><td>该账户已批准入金总额。从未入金 = 0。</td></tr><tr class="rvnew"><td><code>tiers[]</code> <span class="pending">NEW</span></td><td>{group, rates[]}</td><td>任务中配置了费率的每个 MT5 组一项；<code>rates</code> 与 <code>accounts[].rates</code> 结构相同。</td></tr></table></div><p class="specmeta">示例：</p><pre>{
-  "tradingTask": true,
-  "program": {
-    "ended": false, "creditMode": "in-day", "minHoldSeconds": 180, "minHoldMinutes": 3,
-    "creditDelayDays": 0, "expiryDays": 180, "dailyMaxPoints": 2000, "tzMinutes": 420,
-    "termsUrl": "https://.../terms.pdf", "rateRange": { "min": 70, "max": 100 }
+<div class="specsrc" id="spec-api-get" data-title="tradingTask/get" hidden><p class="specmeta">POST <code>/pointSys/app/point/tradingTask/get</code> · Token</p><p>任务信息、今日汇总及客户账户（Earn 页、交易卡片）。</p><div class="specsec"><h4>1. Request</h4><div class="scroll"><table><tr><th style="width:30%">字段</th><th style="width:16%">类型</th><th>含义</th></tr><tr><td><code>clientId</code></td><td>long</td><td>当前登录客户，必须与 token 一致。</td></tr><tr><td><code>currentTime</code></td><td>long，秒</td><td>仅测试用：模拟当前时间（秒级时间戳）。不传则用服务器时间。非法值 → <code>INVALID_CURRENT_TIME</code>。</td></tr></table></div></div><div class="specsec"><h4>2. Response</h4><div class="scroll"><table><tr><th style="width:30%">字段</th><th style="width:16%">类型</th><th>含义</th></tr><tr><td><code>tradingTask</code></td><td>bool</td><td><code>false</code> = 客户没有可参加的任务（只返回该字段）。</td></tr><tr><td><code>program.ended</code></td><td>bool</td><td>任务有限定参与时间，且已过结束时间。</td></tr><tr><td><code>program.creditMode</code></td><td>string</td><td><code>in-day</code>（当日发放）或 <code>delayed</code>（N 天后发放）。</td></tr><tr><td><code>program.minHoldSeconds</code></td><td>int</td><td>最短持仓时间，秒。</td></tr><tr><td><code>program.minHoldMinutes</code></td><td>int</td><td>同上，换算为分钟，向下取整。</td></tr><tr><td><code>program.creditDelayDays</code></td><td>int</td><td><code>delayed</code> 模式下的延迟天数；<code>in-day</code> 模式下为 0。</td></tr><tr><td><code>program.expiryDays</code></td><td>int</td><td>积分有效天数。</td></tr><tr><td><code>program.dailyMaxPoints</code></td><td>long | null</td><td>每位客户每日积分上限。<code>null</code> = 不设上限。</td></tr><tr><td><code>program.tzMinutes</code></td><td>int</td><td>任务时区，用于划分日期。</td></tr><tr><td><code>program.termsUrl</code></td><td>string | null</td><td>条款 PDF 链接，原样返回。<code>null</code> 或空字符串 = 无。</td></tr><tr><td><code>program.rateRange</code></td><td>{min, max} | null</td><td>任务所有费率行中每手积分的最低值和最高值。</td></tr><tr><td><code>today.periodKey</code></td><td>yyyy-MM-dd</td><td>按任务时区的今天。</td></tr><tr><td><code>today.lots</code></td><td>decimal</td><td>今日已计算交易的总手数。</td></tr><tr><td><code>today.lotsValid</code></td><td>decimal</td><td>积分已发放到钱包的交易手数。</td></tr><tr><td><code>today.points</code></td><td>long</td><td>今日已发放到钱包的积分。</td></tr><tr><td><code>today.capped</code></td><td>bool</td><td>已达每日上限。</td></tr><tr><td><code>today.status</code></td><td>string</td><td><code>not_started</code> / <code>pending</code> / <code>earning</code> / <code>credited</code>（见规则）。</td></tr><tr><td><code>today.creditAt</code></td><td>ISO UTC | null</td><td>预计发放时间，仅在 <code>pending</code> 时返回。</td></tr><tr><td><code>today.updatedAt</code></td><td>ISO UTC | null</td><td>最近更新时间。</td></tr><tr><td><code>selectedAccountId</code></td><td>long</td><td>默认选中账户 = <code>accounts</code> 的第一个元素。<code>accounts</code> 为空时不返回。</td></tr><tr><td><code>accounts[].id</code></td><td>long</td><td>真实交易账号。</td></tr><tr><td><code>accounts[].eligible</code></td><td>bool</td><td>该账户的 MT5 组在任务中配置了费率。</td></tr><tr><td><code>accounts[].rates[]</code></td><td>{type, value, ptsPerLot}</td><td>该账户的费率表。<code>type</code> = <code>symbol</code> / <code>symbol_group</code> / <code>any</code>。</td></tr><tr class="rvnew"><td><code>accounts[].group</code> <span class="pending">NEW</span></td><td>string</td><td>该账户的 MT5 组，原样返回完整组名（如 <code>Direct\VIP1</code>）。所有账户都返回。</td></tr><tr class="rvnew"><td><code>accounts[].lifetimeDeposit</code> <span class="pending">NEW</span></td><td>decimal, USD</td><td>该账户已批准入金总额。从未入金 = 0。</td></tr><tr class="rvnew"><td><code>tiers[]</code> <span class="pending">NEW</span></td><td>{group, rates[]}</td><td>任务中配置了费率的每个 MT5 组一项；<code>rates</code> 与 <code>accounts[].rates</code> 结构相同。</td></tr></table></div><p class="specmeta">完整响应（含外层结构）。前端严格按此结构映射：每个字段的名称、位置、类型保持一致；值为 <code>null</code> 的字段也照常返回。</p><pre>{
+  "success": true,
+  "code": 200,
+  "message": "",
+  "result": {
+    "tradingTask": true,
+    "program": {
+      "ended": false,
+      "creditMode": "in-day",
+      "minHoldSeconds": 180,
+      "minHoldMinutes": 3,
+      "creditDelayDays": 0,
+      "expiryDays": 180,
+      "dailyMaxPoints": 2000,
+      "tzMinutes": 420,
+      "termsUrl": "https://.../terms.pdf",
+      "rateRange": { "min": 70.0, "max": 100.0 }
+    },
+    "today": {
+      "periodKey": "2026-10-14",
+      "lots": 3.0,
+      "lotsValid": 2.0,
+      "points": 160,
+      "status": "earning",
+      "creditAt": null,
+      "updatedAt": "2026-10-14T09:37:24Z",
+      "capped": false
+    },
+    "selectedAccountId": 31000001,
+    "accounts": [
+      {
+        "id": 31000001,
+        "eligible": true,
+        "group": "Direct\\Mini400",
+        "lifetimeDeposit": 150.0,
+        "rates": [
+          { "type": "symbol_group", "value": "energy", "ptsPerLot": 70.0 },
+          { "type": "symbol_group", "value": "forex",  "ptsPerLot": 70.0 },
+          { "type": "symbol_group", "value": "index",  "ptsPerLot": 70.0 },
+          { "type": "symbol_group", "value": "metal",  "ptsPerLot": 70.0 },
+          { "type": "any",          "value": "other",  "ptsPerLot": 70.0 }
+        ]
+      },
+      {
+        "id": 31000002,
+        "eligible": true,
+        "group": "Direct\\VIP1",
+        "lifetimeDeposit": 1250.0,
+        "rates": [ "...5 rows, ptsPerLot 90.0..." ]
+      },
+      {
+        "id": 31000003,
+        "eligible": false,
+        "group": "1F\\Direct\\Mini10",
+        "lifetimeDeposit": 0,
+        "rates": []
+      }
+    ],
+    "tiers": [
+      { "group": "Direct\\Mini400", "rates": [ "...same 5 rows as account 31000001..." ] },
+      { "group": "Direct\\Mini10",  "rates": [ "...5 rows, ptsPerLot 80.0..." ] },
+      { "group": "Direct\\VIP1",    "rates": [ "...5 rows, ptsPerLot 90.0..." ] },
+      { "group": "Direct\\MIVIP",   "rates": [ "...5 rows, ptsPerLot 100.0..." ] }
+    ]
   },
-  "today": {
-    "periodKey": "2026-10-14", "lots": 3.0, "lotsValid": 2.0, "points": 160,
-    "capped": false, "status": "earning", "creditAt": null, "updatedAt": "2026-10-14T09:37:24Z"
+  "extraData": null,
+  "timestamp": 1791970217315
+}</pre><p class="specmeta">没有任务时：</p><pre>{ "success": true, "code": 200, "message": "", "result": { "tradingTask": false }, "extraData": null, "timestamp": 1791970217315 }</pre></div><div class="specsec"><h4>3. 规则</h4><ul class="rules"><li>任务选择：客户组（<code>group_code</code>）→ <code>promo_client_group</code> → 积分计划 → 任务包 → 交易任务；4 级均启用；按 Book Type、展示前置事件（<code>display_event</code>）、展示时间窗、全局隐藏标志、黑名单过滤。多个任务同时符合 → 取 id 最小的。</li><li>已过参与结束时间的任务仍会返回，并带 <code>ended = true</code>。</li><li><code>today.status</code>：发放时间尚未到 → <code>pending</code>；仍有待发积分且未达上限 → <code>earning</code>；否则 → <code>credited</code>；当日无数据 → <code>not_started</code>。</li><li><code>accounts</code>：客户未删除的真实账户；MT5 组每次调用时从 <code>mt5_users</code> 读取（不使用 <code>bo_client_logins</code> 中的组字段）。排序：<code>eligible</code> 在前，其次按账号升序。</li><li><code>rates</code>：只保留 <code>ptsPerLot</code> &gt; 0 的行；<code>symbol</code> / <code>symbol_group</code> 行在前，按费率降序；<code>any</code> 行放最后。</li></ul></div></div><div class="specsrc" id="spec-api-guest" data-title="guest/tradingTask/get" hidden><p class="specmeta">POST <code>/pointSys/app/point/guest/tradingTask/get</code> · 无需 token</p><p>未登录游客版本：任务规则，不含个人数据。</p><div class="specsec"><h4>1. Request</h4><div class="scroll"><table><tr><th style="width:30%">字段</th><th style="width:16%">类型</th><th>含义</th></tr><tr class="rvnew"><td><code>currentTime</code> <span class="pending">NEW</span></td><td>long，秒</td><td>仅测试用，与其他接口相同。</td></tr></table></div></div><div class="specsec"><h4>2. Response</h4><div class="scroll"><table><tr><th style="width:30%">字段</th><th style="width:16%">类型</th><th>含义</th></tr><tr class="rvnew"><td><code>*</code> <span class="pending">NEW</span></td><td></td><td>结构与 <code>tradingTask/get</code> 相同。<code>today</code> 固定为 <code>not_started</code>，各数值为 0；<code>accounts = []</code>；不返回 <code>selectedAccountId</code>，不返回 <code>tiers</code>。</td></tr></table></div><p class="specmeta">完整响应（含外层结构）。前端严格按此结构映射：每个字段的名称、位置、类型保持一致；值为 <code>null</code> 的字段也照常返回。</p><pre>{
+  "success": true,
+  "code": 200,
+  "message": "",
+  "result": {
+    "tradingTask": true,
+    "program": {
+      "ended": false,
+      "creditMode": "in-day",
+      "minHoldSeconds": 180,
+      "minHoldMinutes": 3,
+      "creditDelayDays": 0,
+      "expiryDays": 180,
+      "dailyMaxPoints": 2000,
+      "tzMinutes": 420,
+      "termsUrl": "https://.../terms.pdf",
+      "rateRange": { "min": 70.0, "max": 100.0 }
+    },
+    "today": {
+      "periodKey": "2026-10-19",
+      "lots": 0,
+      "lotsValid": 0,
+      "points": 0,
+      "status": "not_started",
+      "creditAt": null,
+      "updatedAt": null,
+      "capped": false
+    },
+    "accounts": []
   },
-  "selectedAccountId": 31000001,
-  "accounts": [
-    { "id": 31000001, "eligible": true, "group": "Direct\\Mini400", "lifetimeDeposit": 150.0,
-      "rates": [ { "type": "symbol_group", "value": "metal", "ptsPerLot": 70 },
-                 { "type": "any", "value": "other", "ptsPerLot": 70 } ] },
-    { "id": 31000002, "eligible": false, "group": "1F\\Direct\\Mini10", "lifetimeDeposit": 0, "rates": [] }
-  ],
-  "tiers": [
-    { "group": "Direct\\Mini400", "rates": [ { "type": "symbol_group", "value": "metal", "ptsPerLot": 70 }, "..." ] },
-    { "group": "Direct\\VIP1",    "rates": [ "..." ] }
-  ]
-}</pre></div><div class="specsec"><h4>3. 规则</h4><ul class="rules"><li>任务选择：客户组（<code>group_code</code>）→ <code>promo_client_group</code> → 积分计划 → 任务包 → 交易任务；4 级均启用；按 Book Type、展示前置事件（<code>display_event</code>）、展示时间窗、全局隐藏标志、黑名单过滤。多个任务同时符合 → 取 id 最小的。</li><li>已过参与结束时间的任务仍会返回，并带 <code>ended = true</code>。</li><li><code>today.status</code>：发放时间尚未到 → <code>pending</code>；仍有待发积分且未达上限 → <code>earning</code>；否则 → <code>credited</code>；当日无数据 → <code>not_started</code>。</li><li><code>accounts</code>：客户未删除的真实账户；MT5 组每次调用时从 <code>mt5_users</code> 读取（不使用 <code>bo_client_logins</code> 中的组字段）。排序：<code>eligible</code> 在前，其次按账号升序。</li><li><code>rates</code>：只保留 <code>ptsPerLot</code> &gt; 0 的行；<code>symbol</code> / <code>symbol_group</code> 行在前，按费率降序；<code>any</code> 行放最后。</li></ul></div></div><div class="specsrc" id="spec-api-guest" data-title="guest/tradingTask/get" hidden><p class="specmeta">POST <code>/pointSys/app/point/guest/tradingTask/get</code> · 无需 token</p><p>未登录游客版本：任务规则，不含个人数据。</p><div class="specsec"><h4>1. Request</h4><div class="scroll"><table><tr><th style="width:30%">字段</th><th style="width:16%">类型</th><th>含义</th></tr><tr class="rvnew"><td><code>currentTime</code> <span class="pending">NEW</span></td><td>long，秒</td><td>仅测试用，与其他接口相同。</td></tr></table></div></div><div class="specsec"><h4>2. Response</h4><div class="scroll"><table><tr><th style="width:30%">字段</th><th style="width:16%">类型</th><th>含义</th></tr><tr class="rvnew"><td><code>*</code> <span class="pending">NEW</span></td><td></td><td>结构与 <code>tradingTask/get</code> 相同。<code>today</code> 固定为 <code>not_started</code>，各数值为 0；<code>accounts = []</code>；不返回 <code>selectedAccountId</code>，不返回 <code>tiers</code>。</td></tr></table></div></div><div class="specsec"><h4>3. 规则</h4><ul class="rules"><li>不校验 token，不需要 <code>clientId</code>；请求中带 <code>clientId</code> 也忽略。仍校验 <code>x-auth-key</code>。</li><li>复用 <code>tradingTask/get</code> 的任务选择方法，参数固定：客户组 <code>direct_client</code>（写死在代码中）、book type 9、KYC / 首次入金 / 首次交易时间 = 0、<code>clientId</code> = null。无需修改 SQL。</li><li>效果：只展示 <code>display_event = signup</code> 的任务；对所有人隐藏的任务不展示；黑名单不生效。</li></ul><p class="specmeta">等价 SQL：</p><pre>-- Equivalent SQL of guest/tradingTask/get (read only). No row =&gt; {"tradingTask": false}
+  "extraData": null,
+  "timestamp": 1792396800000
+}</pre><p class="specmeta">没有任务时：</p><pre>{ "success": true, "code": 200, "message": "", "result": { "tradingTask": false }, "extraData": null, "timestamp": 1791970217315 }</pre></div><div class="specsec"><h4>3. 规则</h4><ul class="rules"><li>不校验 token，不需要 <code>clientId</code>；请求中带 <code>clientId</code> 也忽略。仍校验 <code>x-auth-key</code>。</li><li>复用 <code>tradingTask/get</code> 的任务选择方法，参数固定：客户组 <code>direct_client</code>（写死在代码中）、book type 9、KYC / 首次入金 / 首次交易时间 = 0、<code>clientId</code> = null。无需修改 SQL。</li><li>效果：只展示 <code>display_event = signup</code> 的任务；对所有人隐藏的任务不展示；黑名单不生效。</li></ul><p class="specmeta">等价 SQL：</p><pre>-- Equivalent SQL of guest/tradingTask/get (read only). No row =&gt; {"tradingTask": false}
 SET @now = UTC_TIMESTAMP();
 
 SELECT d.*,                                   -- program fields are built from this row
@@ -762,29 +916,106 @@ GROUP BY login_id</pre>
   <li>Trường giá trị <code>null</code> có thể được trả tường minh hoặc vắng mặt; front-end xử lý như nhau.</li>
   <li>Số thập phân có thể được trả dạng <code>70.0</code>.</li>
 </ul>
-<div class="specsrc" id="spec-api-get" data-title="tradingTask/get" hidden><p class="specmeta">POST <code>/pointSys/app/point/tradingTask/get</code> · Token</p><p>Thông tin chương trình, tổng hợp hôm nay và tài khoản của khách (trang Earn, thẻ trading).</p><div class="specsec"><h4>1. Request</h4><div class="scroll"><table><tr><th style="width:30%">Trường</th><th style="width:16%">Kiểu</th><th>Ý nghĩa</th></tr><tr><td><code>clientId</code></td><td>long</td><td>Khách đang đăng nhập. Phải khớp với token.</td></tr><tr><td><code>currentTime</code></td><td>long, giây</td><td>Chỉ để test: giả lập giờ hiện tại (epoch giây). Không gửi thì dùng giờ máy chủ. Giá trị không hợp lệ → <code>INVALID_CURRENT_TIME</code>.</td></tr></table></div></div><div class="specsec"><h4>2. Response</h4><div class="scroll"><table><tr><th style="width:30%">Trường</th><th style="width:16%">Kiểu</th><th>Ý nghĩa</th></tr><tr><td><code>tradingTask</code></td><td>bool</td><td><code>false</code> = khách không có chương trình (chỉ có trường này).</td></tr><tr><td><code>program.ended</code></td><td>bool</td><td>Chương trình có giới hạn thời gian tham gia và đã qua giờ kết thúc.</td></tr><tr><td><code>program.creditMode</code></td><td>string</td><td><code>in-day</code> (coin về trong ngày) hoặc <code>delayed</code> (coin về sau N ngày).</td></tr><tr><td><code>program.minHoldSeconds</code></td><td>int</td><td>Thời gian giữ lệnh tối thiểu, giây.</td></tr><tr><td><code>program.minHoldMinutes</code></td><td>int</td><td>Như trên, đổi ra phút, làm tròn xuống.</td></tr><tr><td><code>program.creditDelayDays</code></td><td>int</td><td>Số ngày chờ ở chế độ <code>delayed</code>; 0 ở chế độ <code>in-day</code>.</td></tr><tr><td><code>program.expiryDays</code></td><td>int</td><td>Số ngày coin còn hạn dùng.</td></tr><tr><td><code>program.dailyMaxPoints</code></td><td>long | null</td><td>Trần coin mỗi khách mỗi ngày. <code>null</code> = không có trần.</td></tr><tr><td><code>program.tzMinutes</code></td><td>int</td><td>Múi giờ của chương trình, dùng để chia ngày.</td></tr><tr><td><code>program.termsUrl</code></td><td>string | null</td><td>Link PDF điều khoản, trả nguyên văn. <code>null</code> hoặc chuỗi rỗng = không có.</td></tr><tr><td><code>program.rateRange</code></td><td>{min, max} | null</td><td>Tỷ lệ coin mỗi lot thấp nhất và cao nhất trên mọi dòng tỷ lệ của chương trình.</td></tr><tr><td><code>today.periodKey</code></td><td>yyyy-MM-dd</td><td>Hôm nay theo múi giờ chương trình.</td></tr><tr><td><code>today.lots</code></td><td>decimal</td><td>Tổng lot các lệnh đã được tính trong ngày.</td></tr><tr><td><code>today.lotsValid</code></td><td>decimal</td><td>Lot của các lệnh mà coin đã về ví.</td></tr><tr><td><code>today.points</code></td><td>long</td><td>Coin đã về ví trong ngày.</td></tr><tr><td><code>today.capped</code></td><td>bool</td><td>Đã chạm trần ngày.</td></tr><tr><td><code>today.status</code></td><td>string</td><td><code>not_started</code> / <code>pending</code> / <code>earning</code> / <code>credited</code> (xem quy tắc).</td></tr><tr><td><code>today.creditAt</code></td><td>ISO UTC | null</td><td>Giờ coin dự kiến về, chỉ có khi <code>pending</code>.</td></tr><tr><td><code>today.updatedAt</code></td><td>ISO UTC | null</td><td>Lần cập nhật gần nhất.</td></tr><tr><td><code>selectedAccountId</code></td><td>long</td><td>Tài khoản chọn sẵn = phần tử đầu của <code>accounts</code>. Không có khi <code>accounts</code> rỗng.</td></tr><tr><td><code>accounts[].id</code></td><td>long</td><td>Số tài khoản giao dịch thật.</td></tr><tr><td><code>accounts[].eligible</code></td><td>bool</td><td>Nhóm MT5 của tài khoản có dòng tỷ lệ trong chương trình.</td></tr><tr><td><code>accounts[].rates[]</code></td><td>{type, value, ptsPerLot}</td><td>Bảng tỷ lệ của tài khoản. <code>type</code> = <code>symbol</code> / <code>symbol_group</code> / <code>any</code>.</td></tr><tr class="rvnew"><td><code>accounts[].group</code> <span class="pending">NEW</span></td><td>string</td><td>Nhóm MT5 của tài khoản, nguyên tên đầy đủ (ví dụ <code>Direct\VIP1</code>). Có ở mọi tài khoản.</td></tr><tr class="rvnew"><td><code>accounts[].lifetimeDeposit</code> <span class="pending">NEW</span></td><td>decimal, USD</td><td>Tổng tiền nạp đã duyệt của tài khoản. Chưa từng nạp = 0.</td></tr><tr class="rvnew"><td><code>tiers[]</code> <span class="pending">NEW</span></td><td>{group, rates[]}</td><td>Mỗi nhóm MT5 có dòng tỷ lệ trong chương trình là một phần tử; <code>rates</code> cùng dạng <code>accounts[].rates</code>.</td></tr></table></div><p class="specmeta">Ví dụ:</p><pre>{
-  "tradingTask": true,
-  "program": {
-    "ended": false, "creditMode": "in-day", "minHoldSeconds": 180, "minHoldMinutes": 3,
-    "creditDelayDays": 0, "expiryDays": 180, "dailyMaxPoints": 2000, "tzMinutes": 420,
-    "termsUrl": "https://.../terms.pdf", "rateRange": { "min": 70, "max": 100 }
+<div class="specsrc" id="spec-api-get" data-title="tradingTask/get" hidden><p class="specmeta">POST <code>/pointSys/app/point/tradingTask/get</code> · Token</p><p>Thông tin chương trình, tổng hợp hôm nay và tài khoản của khách (trang Earn, thẻ trading).</p><div class="specsec"><h4>1. Request</h4><div class="scroll"><table><tr><th style="width:30%">Trường</th><th style="width:16%">Kiểu</th><th>Ý nghĩa</th></tr><tr><td><code>clientId</code></td><td>long</td><td>Khách đang đăng nhập. Phải khớp với token.</td></tr><tr><td><code>currentTime</code></td><td>long, giây</td><td>Chỉ để test: giả lập giờ hiện tại (epoch giây). Không gửi thì dùng giờ máy chủ. Giá trị không hợp lệ → <code>INVALID_CURRENT_TIME</code>.</td></tr></table></div></div><div class="specsec"><h4>2. Response</h4><div class="scroll"><table><tr><th style="width:30%">Trường</th><th style="width:16%">Kiểu</th><th>Ý nghĩa</th></tr><tr><td><code>tradingTask</code></td><td>bool</td><td><code>false</code> = khách không có chương trình (chỉ có trường này).</td></tr><tr><td><code>program.ended</code></td><td>bool</td><td>Chương trình có giới hạn thời gian tham gia và đã qua giờ kết thúc.</td></tr><tr><td><code>program.creditMode</code></td><td>string</td><td><code>in-day</code> (coin về trong ngày) hoặc <code>delayed</code> (coin về sau N ngày).</td></tr><tr><td><code>program.minHoldSeconds</code></td><td>int</td><td>Thời gian giữ lệnh tối thiểu, giây.</td></tr><tr><td><code>program.minHoldMinutes</code></td><td>int</td><td>Như trên, đổi ra phút, làm tròn xuống.</td></tr><tr><td><code>program.creditDelayDays</code></td><td>int</td><td>Số ngày chờ ở chế độ <code>delayed</code>; 0 ở chế độ <code>in-day</code>.</td></tr><tr><td><code>program.expiryDays</code></td><td>int</td><td>Số ngày coin còn hạn dùng.</td></tr><tr><td><code>program.dailyMaxPoints</code></td><td>long | null</td><td>Trần coin mỗi khách mỗi ngày. <code>null</code> = không có trần.</td></tr><tr><td><code>program.tzMinutes</code></td><td>int</td><td>Múi giờ của chương trình, dùng để chia ngày.</td></tr><tr><td><code>program.termsUrl</code></td><td>string | null</td><td>Link PDF điều khoản, trả nguyên văn. <code>null</code> hoặc chuỗi rỗng = không có.</td></tr><tr><td><code>program.rateRange</code></td><td>{min, max} | null</td><td>Tỷ lệ coin mỗi lot thấp nhất và cao nhất trên mọi dòng tỷ lệ của chương trình.</td></tr><tr><td><code>today.periodKey</code></td><td>yyyy-MM-dd</td><td>Hôm nay theo múi giờ chương trình.</td></tr><tr><td><code>today.lots</code></td><td>decimal</td><td>Tổng lot các lệnh đã được tính trong ngày.</td></tr><tr><td><code>today.lotsValid</code></td><td>decimal</td><td>Lot của các lệnh mà coin đã về ví.</td></tr><tr><td><code>today.points</code></td><td>long</td><td>Coin đã về ví trong ngày.</td></tr><tr><td><code>today.capped</code></td><td>bool</td><td>Đã chạm trần ngày.</td></tr><tr><td><code>today.status</code></td><td>string</td><td><code>not_started</code> / <code>pending</code> / <code>earning</code> / <code>credited</code> (xem quy tắc).</td></tr><tr><td><code>today.creditAt</code></td><td>ISO UTC | null</td><td>Giờ coin dự kiến về, chỉ có khi <code>pending</code>.</td></tr><tr><td><code>today.updatedAt</code></td><td>ISO UTC | null</td><td>Lần cập nhật gần nhất.</td></tr><tr><td><code>selectedAccountId</code></td><td>long</td><td>Tài khoản chọn sẵn = phần tử đầu của <code>accounts</code>. Không có khi <code>accounts</code> rỗng.</td></tr><tr><td><code>accounts[].id</code></td><td>long</td><td>Số tài khoản giao dịch thật.</td></tr><tr><td><code>accounts[].eligible</code></td><td>bool</td><td>Nhóm MT5 của tài khoản có dòng tỷ lệ trong chương trình.</td></tr><tr><td><code>accounts[].rates[]</code></td><td>{type, value, ptsPerLot}</td><td>Bảng tỷ lệ của tài khoản. <code>type</code> = <code>symbol</code> / <code>symbol_group</code> / <code>any</code>.</td></tr><tr class="rvnew"><td><code>accounts[].group</code> <span class="pending">NEW</span></td><td>string</td><td>Nhóm MT5 của tài khoản, nguyên tên đầy đủ (ví dụ <code>Direct\VIP1</code>). Có ở mọi tài khoản.</td></tr><tr class="rvnew"><td><code>accounts[].lifetimeDeposit</code> <span class="pending">NEW</span></td><td>decimal, USD</td><td>Tổng tiền nạp đã duyệt của tài khoản. Chưa từng nạp = 0.</td></tr><tr class="rvnew"><td><code>tiers[]</code> <span class="pending">NEW</span></td><td>{group, rates[]}</td><td>Mỗi nhóm MT5 có dòng tỷ lệ trong chương trình là một phần tử; <code>rates</code> cùng dạng <code>accounts[].rates</code>.</td></tr></table></div><p class="specmeta">Response đầy đủ, gồm cả vỏ ngoài. Front-end map đúng theo dạng này: giữ nguyên tên, vị trí và kiểu của từng trường; trường có giá trị <code>null</code> vẫn được trả.</p><pre>{
+  "success": true,
+  "code": 200,
+  "message": "",
+  "result": {
+    "tradingTask": true,
+    "program": {
+      "ended": false,
+      "creditMode": "in-day",
+      "minHoldSeconds": 180,
+      "minHoldMinutes": 3,
+      "creditDelayDays": 0,
+      "expiryDays": 180,
+      "dailyMaxPoints": 2000,
+      "tzMinutes": 420,
+      "termsUrl": "https://.../terms.pdf",
+      "rateRange": { "min": 70.0, "max": 100.0 }
+    },
+    "today": {
+      "periodKey": "2026-10-14",
+      "lots": 3.0,
+      "lotsValid": 2.0,
+      "points": 160,
+      "status": "earning",
+      "creditAt": null,
+      "updatedAt": "2026-10-14T09:37:24Z",
+      "capped": false
+    },
+    "selectedAccountId": 31000001,
+    "accounts": [
+      {
+        "id": 31000001,
+        "eligible": true,
+        "group": "Direct\\Mini400",
+        "lifetimeDeposit": 150.0,
+        "rates": [
+          { "type": "symbol_group", "value": "energy", "ptsPerLot": 70.0 },
+          { "type": "symbol_group", "value": "forex",  "ptsPerLot": 70.0 },
+          { "type": "symbol_group", "value": "index",  "ptsPerLot": 70.0 },
+          { "type": "symbol_group", "value": "metal",  "ptsPerLot": 70.0 },
+          { "type": "any",          "value": "other",  "ptsPerLot": 70.0 }
+        ]
+      },
+      {
+        "id": 31000002,
+        "eligible": true,
+        "group": "Direct\\VIP1",
+        "lifetimeDeposit": 1250.0,
+        "rates": [ "...5 rows, ptsPerLot 90.0..." ]
+      },
+      {
+        "id": 31000003,
+        "eligible": false,
+        "group": "1F\\Direct\\Mini10",
+        "lifetimeDeposit": 0,
+        "rates": []
+      }
+    ],
+    "tiers": [
+      { "group": "Direct\\Mini400", "rates": [ "...same 5 rows as account 31000001..." ] },
+      { "group": "Direct\\Mini10",  "rates": [ "...5 rows, ptsPerLot 80.0..." ] },
+      { "group": "Direct\\VIP1",    "rates": [ "...5 rows, ptsPerLot 90.0..." ] },
+      { "group": "Direct\\MIVIP",   "rates": [ "...5 rows, ptsPerLot 100.0..." ] }
+    ]
   },
-  "today": {
-    "periodKey": "2026-10-14", "lots": 3.0, "lotsValid": 2.0, "points": 160,
-    "capped": false, "status": "earning", "creditAt": null, "updatedAt": "2026-10-14T09:37:24Z"
+  "extraData": null,
+  "timestamp": 1791970217315
+}</pre><p class="specmeta">Khi không có chương trình:</p><pre>{ "success": true, "code": 200, "message": "", "result": { "tradingTask": false }, "extraData": null, "timestamp": 1791970217315 }</pre></div><div class="specsec"><h4>3. Quy tắc</h4><ul class="rules"><li>Chọn chương trình: nhóm khách (<code>group_code</code>) → <code>promo_client_group</code> → chương trình → bộ task → task trading; 4 cấp đều bật; lọc theo book type, mốc hiển thị (<code>display_event</code>), khung thời gian hiển thị, cờ ẩn với mọi người, blacklist. Nhiều task cùng đủ điều kiện → lấy id nhỏ nhất.</li><li>Chương trình đã qua giờ kết thúc tham gia vẫn được trả, kèm <code>ended = true</code>.</li><li><code>today.status</code>: giờ hẹn phát còn ở tương lai → <code>pending</code>; còn coin chờ phát và chưa chạm trần → <code>earning</code>; còn lại → <code>credited</code>; không có dữ liệu ngày → <code>not_started</code>.</li><li><code>accounts</code>: tài khoản thật chưa xoá của khách; nhóm MT5 đọc từ <code>mt5_users</code> mỗi lần gọi (không dùng trường nhóm trong <code>bo_client_logins</code>). Thứ tự: <code>eligible</code> trước, rồi số tài khoản tăng dần.</li><li><code>rates</code>: chỉ dòng có <code>ptsPerLot</code> &gt; 0; các dòng <code>symbol</code> / <code>symbol_group</code> trước, xếp tỷ lệ giảm dần; dòng <code>any</code> cuối cùng.</li></ul></div></div><div class="specsrc" id="spec-api-guest" data-title="guest/tradingTask/get" hidden><p class="specmeta">POST <code>/pointSys/app/point/guest/tradingTask/get</code> · Không cần token</p><p>Bản cho khách chưa đăng nhập: luật chơi của chương trình, không có dữ liệu cá nhân.</p><div class="specsec"><h4>1. Request</h4><div class="scroll"><table><tr><th style="width:30%">Trường</th><th style="width:16%">Kiểu</th><th>Ý nghĩa</th></tr><tr class="rvnew"><td><code>currentTime</code> <span class="pending">NEW</span></td><td>long, giây</td><td>Chỉ để test, như các API khác.</td></tr></table></div></div><div class="specsec"><h4>2. Response</h4><div class="scroll"><table><tr><th style="width:30%">Trường</th><th style="width:16%">Kiểu</th><th>Ý nghĩa</th></tr><tr class="rvnew"><td><code>*</code> <span class="pending">NEW</span></td><td></td><td>Cùng cấu trúc <code>tradingTask/get</code>. <code>today</code> cố định <code>not_started</code>, mọi số bằng 0; <code>accounts = []</code>; không có <code>selectedAccountId</code>, không có <code>tiers</code>.</td></tr></table></div><p class="specmeta">Response đầy đủ, gồm cả vỏ ngoài. Front-end map đúng theo dạng này: giữ nguyên tên, vị trí và kiểu của từng trường; trường có giá trị <code>null</code> vẫn được trả.</p><pre>{
+  "success": true,
+  "code": 200,
+  "message": "",
+  "result": {
+    "tradingTask": true,
+    "program": {
+      "ended": false,
+      "creditMode": "in-day",
+      "minHoldSeconds": 180,
+      "minHoldMinutes": 3,
+      "creditDelayDays": 0,
+      "expiryDays": 180,
+      "dailyMaxPoints": 2000,
+      "tzMinutes": 420,
+      "termsUrl": "https://.../terms.pdf",
+      "rateRange": { "min": 70.0, "max": 100.0 }
+    },
+    "today": {
+      "periodKey": "2026-10-19",
+      "lots": 0,
+      "lotsValid": 0,
+      "points": 0,
+      "status": "not_started",
+      "creditAt": null,
+      "updatedAt": null,
+      "capped": false
+    },
+    "accounts": []
   },
-  "selectedAccountId": 31000001,
-  "accounts": [
-    { "id": 31000001, "eligible": true, "group": "Direct\\Mini400", "lifetimeDeposit": 150.0,
-      "rates": [ { "type": "symbol_group", "value": "metal", "ptsPerLot": 70 },
-                 { "type": "any", "value": "other", "ptsPerLot": 70 } ] },
-    { "id": 31000002, "eligible": false, "group": "1F\\Direct\\Mini10", "lifetimeDeposit": 0, "rates": [] }
-  ],
-  "tiers": [
-    { "group": "Direct\\Mini400", "rates": [ { "type": "symbol_group", "value": "metal", "ptsPerLot": 70 }, "..." ] },
-    { "group": "Direct\\VIP1",    "rates": [ "..." ] }
-  ]
-}</pre></div><div class="specsec"><h4>3. Quy tắc</h4><ul class="rules"><li>Chọn chương trình: nhóm khách (<code>group_code</code>) → <code>promo_client_group</code> → chương trình → bộ task → task trading; 4 cấp đều bật; lọc theo book type, mốc hiển thị (<code>display_event</code>), khung thời gian hiển thị, cờ ẩn với mọi người, blacklist. Nhiều task cùng đủ điều kiện → lấy id nhỏ nhất.</li><li>Chương trình đã qua giờ kết thúc tham gia vẫn được trả, kèm <code>ended = true</code>.</li><li><code>today.status</code>: giờ hẹn phát còn ở tương lai → <code>pending</code>; còn coin chờ phát và chưa chạm trần → <code>earning</code>; còn lại → <code>credited</code>; không có dữ liệu ngày → <code>not_started</code>.</li><li><code>accounts</code>: tài khoản thật chưa xoá của khách; nhóm MT5 đọc từ <code>mt5_users</code> mỗi lần gọi (không dùng trường nhóm trong <code>bo_client_logins</code>). Thứ tự: <code>eligible</code> trước, rồi số tài khoản tăng dần.</li><li><code>rates</code>: chỉ dòng có <code>ptsPerLot</code> &gt; 0; các dòng <code>symbol</code> / <code>symbol_group</code> trước, xếp tỷ lệ giảm dần; dòng <code>any</code> cuối cùng.</li></ul></div></div><div class="specsrc" id="spec-api-guest" data-title="guest/tradingTask/get" hidden><p class="specmeta">POST <code>/pointSys/app/point/guest/tradingTask/get</code> · Không cần token</p><p>Bản cho khách chưa đăng nhập: luật chơi của chương trình, không có dữ liệu cá nhân.</p><div class="specsec"><h4>1. Request</h4><div class="scroll"><table><tr><th style="width:30%">Trường</th><th style="width:16%">Kiểu</th><th>Ý nghĩa</th></tr><tr class="rvnew"><td><code>currentTime</code> <span class="pending">NEW</span></td><td>long, giây</td><td>Chỉ để test, như các API khác.</td></tr></table></div></div><div class="specsec"><h4>2. Response</h4><div class="scroll"><table><tr><th style="width:30%">Trường</th><th style="width:16%">Kiểu</th><th>Ý nghĩa</th></tr><tr class="rvnew"><td><code>*</code> <span class="pending">NEW</span></td><td></td><td>Cùng cấu trúc <code>tradingTask/get</code>. <code>today</code> cố định <code>not_started</code>, mọi số bằng 0; <code>accounts = []</code>; không có <code>selectedAccountId</code>, không có <code>tiers</code>.</td></tr></table></div></div><div class="specsec"><h4>3. Quy tắc</h4><ul class="rules"><li>Không kiểm token, không cần <code>clientId</code>; request có gửi <code>clientId</code> cũng bỏ qua. Vẫn kiểm <code>x-auth-key</code>.</li><li>Gọi lại đúng hàm chọn chương trình của <code>tradingTask/get</code> với tham số cố định: nhóm khách <code>direct_client</code> (viết cứng trong code), book type 9, các mốc KYC / nạp lần đầu / giao dịch lần đầu = 0, <code>clientId</code> = null. Không cần sửa SQL.</li><li>Hệ quả: chỉ chương trình <code>display_event = signup</code> được hiện; chương trình bật cờ ẩn với mọi người không hiện; blacklist không áp dụng.</li></ul><p class="specmeta">SQL tương đương:</p><pre>-- Equivalent SQL of guest/tradingTask/get (read only). No row =&gt; {"tradingTask": false}
+  "extraData": null,
+  "timestamp": 1792396800000
+}</pre><p class="specmeta">Khi không có chương trình:</p><pre>{ "success": true, "code": 200, "message": "", "result": { "tradingTask": false }, "extraData": null, "timestamp": 1791970217315 }</pre></div><div class="specsec"><h4>3. Quy tắc</h4><ul class="rules"><li>Không kiểm token, không cần <code>clientId</code>; request có gửi <code>clientId</code> cũng bỏ qua. Vẫn kiểm <code>x-auth-key</code>.</li><li>Gọi lại đúng hàm chọn chương trình của <code>tradingTask/get</code> với tham số cố định: nhóm khách <code>direct_client</code> (viết cứng trong code), book type 9, các mốc KYC / nạp lần đầu / giao dịch lần đầu = 0, <code>clientId</code> = null. Không cần sửa SQL.</li><li>Hệ quả: chỉ chương trình <code>display_event = signup</code> được hiện; chương trình bật cờ ẩn với mọi người không hiện; blacklist không áp dụng.</li></ul><p class="specmeta">SQL tương đương:</p><pre>-- Equivalent SQL of guest/tradingTask/get (read only). No row =&gt; {"tradingTask": false}
 SET @now = UTC_TIMESTAMP();
 
 SELECT d.*,                                   -- program fields are built from this row

@@ -149,13 +149,12 @@ table.apiidx td { vertical-align: middle; }
 <p>Path prefix: <code>/pointSys/app/point/</code>. All APIs use <code>POST</code>, JSON body, envelope <code>{ success, code, message, result }</code>; on error: <code>success = false</code>, error code in <code>message</code>. All APIs check the <code>x-auth-key</code> header.</p>
 <div class="scroll"><table class="apiidx">
   <tr><th style="width:24%">API</th><th>Role</th><th style="width:18%">Status</th><th style="width:10%"></th></tr>
-  <tr class="rvnew"><td><a href="#api" class="ref">tradingTask/get</a></td><td>Program info, today's summary and the client's accounts (Earn page, trading card).</td><td>Live · 3 fields added</td><td><button type="button" class="specbtn" data-spec="api-get">Spec</button></td></tr><tr class="rvnew"><td><a href="#api" class="ref">guest/tradingTask/get</a></td><td>Version for guests (not logged in): program rules, no personal data.</td><td>New</td><td><button type="button" class="specbtn" data-spec="api-guest">Spec</button></td></tr><tr><td><a href="#api" class="ref">tradingTask/getHistory</a></td><td>Daily trading coin history (History tab of the Earn page).</td><td>Live</td><td><button type="button" class="specbtn" data-spec="api-history">Spec</button></td></tr><tr><td><a href="#api" class="ref">coin/summary</a></td><td>Coin balance (top of the Coins page).</td><td>Live</td><td><button type="button" class="specbtn" data-spec="api-summary">Spec</button></td></tr><tr><td><a href="#api" class="ref">coin/listAvailable</a></td><td>Coin lots still valid (Available tab of the Coins page).</td><td>Live</td><td><button type="button" class="specbtn" data-spec="api-available">Spec</button></td></tr><tr><td><a href="#api" class="ref">coin/listExpired</a></td><td>Expired coin lots (Expired tab of the Coins page).</td><td>Live</td><td><button type="button" class="specbtn" data-spec="api-expired">Spec</button></td></tr><tr><td><a href="#api" class="ref">coin/ledger</a></td><td>Coin movement history (History tab of the Coins page).</td><td>Live</td><td><button type="button" class="specbtn" data-spec="api-ledger">Spec</button></td></tr>
+  <tr class="rvnew"><td><a href="#api" class="ref">tradingTask/get</a></td><td>Program info, today's summary and the client's accounts (Earn page, trading card).</td><td>Live · 3 fields pending (G-2)</td><td><button type="button" class="specbtn" data-spec="api-get">Spec</button></td></tr><tr class="rvnew"><td><a href="#api" class="ref">guest/tradingTask/get</a></td><td>Version for guests (not logged in): program rules, no personal data.</td><td>Not yet (G-1)</td><td><button type="button" class="specbtn" data-spec="api-guest">Spec</button></td></tr><tr><td><a href="#api" class="ref">tradingTask/getHistory</a></td><td>Daily trading coin history (History tab of the Earn page).</td><td>Live</td><td><button type="button" class="specbtn" data-spec="api-history">Spec</button></td></tr><tr><td><a href="#api" class="ref">coin/summary</a></td><td>Coin balance (top of the Coins page).</td><td>Live</td><td><button type="button" class="specbtn" data-spec="api-summary">Spec</button></td></tr><tr><td><a href="#api" class="ref">coin/listAvailable</a></td><td>Coin lots still valid (Available tab of the Coins page).</td><td>Live</td><td><button type="button" class="specbtn" data-spec="api-available">Spec</button></td></tr><tr><td><a href="#api" class="ref">coin/listExpired</a></td><td>Expired coin lots (Expired tab of the Coins page).</td><td>Live</td><td><button type="button" class="specbtn" data-spec="api-expired">Spec</button></td></tr><tr><td><a href="#api" class="ref">coin/ledger</a></td><td>Coin movement history (History tab of the Coins page).</td><td>Live</td><td><button type="button" class="specbtn" data-spec="api-ledger">Spec</button></td></tr>
 </table></div>
 </section><section class="panel" id="req" role="tabpanel">
 <h2>2. Open requests — 2026-10-19</h2>
 <p>Two items. When done and deployed to UAT, share the G-1 path; QA runs a small test on both and updates this page.</p>
 
-<div class="rvnew">
 <h3>G-1. New API <code>guest/tradingTask/get</code> <span class="pending">OPEN</span></h3>
 <p>Guests (no <code>clientId</code>, no token) can still see the program rules on the Earn page. Product accepts: every guest is shown the configuration of client group <code>direct_client</code>.</p>
 <ul>
@@ -173,19 +172,54 @@ table.apiidx td { vertical-align: middle; }
 </ul>
 <p><button type="button" class="specbtn" data-spec="api-guest">Spec guest/tradingTask/get</button></p>
 
-<h3>G-2. <code>tradingTask/get</code> adds 3 fields <span class="pending">OPEN</span></h3>
-<p>For the account tier feature on the Earn page (logged-in clients). Tier names and deposit thresholds are kept by the front-end; backend only returns the data below.</p>
-<ol class="conds">
-  <li><code>accounts[].group</code> (string): the account's MT5 group, <b>full name as is</b> (e.g. <code>Direct\VIP1</code>, <code>1F\Direct\Mini10</code>), not truncated. It is the value <code>buildAccounts</code> already reads from <code>mt5_users</code>. Present on every account, including <code>eligible = false</code>.</li>
-  <li><code>accounts[].lifetimeDeposit</code> (number, USD): total approved deposits of the account; never deposited = <code>0</code>. <pre>SELECT login_id, SUM(amount_converted) AS deposit_usd   -- amount_converted is always USD
+<h3>G-2. Add 3 fields to the existing API <code>tradingTask/get</code> <span class="pending">OPEN</span></h3>
+<p><code>tradingTask/get</code> is a <b>live</b> API. This request <b>only adds 3 fields</b> for the account tier feature on the Earn page (logged-in clients). Tier names and deposit thresholds are kept by the front-end; backend only returns the data below.</p>
+
+<h4>Unchanged</h4>
+<ul>
+  <li>Path, request, authentication: unchanged.</li>
+  <li><b>All existing fields stay as they are</b> (name, type, meaning): <code>tradingTask</code>, all of <code>program</code>, all of <code>today</code>, <code>selectedAccountId</code>, <code>accounts[].id</code>, <code>accounts[].eligible</code>, <code>accounts[].rates</code>. No field is removed or renamed.</li>
+  <li>Existing logic unchanged: program selection, <code>today</code> calculation, the list and order of <code>accounts</code>, how <code>rates</code> are filtered and sorted.</li>
+</ul>
+
+<h4>New</h4>
+<div class="scroll"><table>
+  <tr><th style="width:22%">New field</th><th style="width:16%">Location</th><th style="width:12%">Type</th><th>How to get it</th></tr>
+  <tr><td><code>group</code></td><td>In each element of <code>accounts[]</code></td><td>string</td>
+      <td>The MT5 group that <code>buildAccounts</code> already reads from <code>mt5_users</code> to compute <code>rates</code> (no extra query). Return the <b>full name as is</b>, e.g. <code>Direct\VIP1</code>, <code>1F\Direct\Mini10</code>; do not truncate. Present on every account, including <code>eligible = false</code>. Group not found → <code>null</code>.</td></tr>
+  <tr><td><code>lifetimeDeposit</code></td><td>In each element of <code>accounts[]</code></td><td>decimal, USD</td>
+      <td>Total approved deposits of the account. Run the SQL below once per client, then map by <code>login_id</code>. Account with no rows → <code>0</code>.</td></tr>
+  <tr><td><code>tiers</code></td><td>Top level of <code>result</code>, alongside <code>accounts</code></td><td>array of <code>{ group, rates }</code></td>
+      <td>Take the rate rows of the current task in <code>point_task_trading_point_conversion</code> (<code>deleted = 0</code>), grouped by <code>mt5_group</code>; one element per group. <code>group</code> = <code>mt5_group</code> full name; <code>rates</code> produced by <b>the same method</b> <code>buildRates</code> as <code>accounts[].rates</code>, so both always match. Skip groups whose <code>rates</code> is empty. No sorting needed. Not returned when <code>tradingTask = false</code>.</td></tr>
+</table></div>
+<p class="specmeta">SQL for <code>lifetimeDeposit</code>:</p>
+<pre>SELECT login_id, SUM(amount_converted) AS deposit_usd   -- amount_converted is always USD
 FROM bo_client_deposit_proposal
 WHERE proposal_status = 2                                      -- approved
   AND client_id = #{clientId}
-GROUP BY login_id</pre></li>
-  <li><code>tiers[]</code> at the top level: one element <code>{ group, rates }</code> per MT5 group that has rate rows in the current task. Source: <code>point_task_trading_point_conversion</code> (current task, <code>deleted = 0</code>), grouped by <code>mt5_group</code>. <code>rates</code> must be produced by <b>the same method</b> <code>buildRates</code> as <code>accounts[].rates</code>, so both always match. No sorting needed. Not returned when <code>tradingTask = false</code>.</li>
-</ol>
+GROUP BY login_id</pre>
+<p class="specmeta">Response after the change (relevant part only):</p>
+<pre>{
+  "tradingTask": true,
+  "program": { ...unchanged... },
+  "today":   { ...unchanged... },
+  "selectedAccountId": 31000001,
+  "accounts": [
+    { "id": 31000001, "eligible": true, "rates": [ ...unchanged... ],
+      "group": "Direct\\Mini400",          // NEW
+      "lifetimeDeposit": 150.0 },            // NEW
+    { "id": 31000002, "eligible": false, "rates": [],
+      "group": "1F\\Direct\\Mini10",       // NEW
+      "lifetimeDeposit": 0 }                 // NEW
+  ],
+  "tiers": [                                 // NEW
+    { "group": "Direct\\Mini400", "rates": [ { "type": "symbol_group", "value": "metal", "ptsPerLot": 70 }, "..." ] },
+    { "group": "Direct\\Mini10",  "rates": [ "..." ] },
+    { "group": "Direct\\VIP1",    "rates": [ "..." ] },
+    { "group": "Direct\\MIVIP",   "rates": [ "..." ] }
+  ]
+}</pre>
 <p><button type="button" class="specbtn" data-spec="api-get">Spec tradingTask/get</button></p>
-</div>
 </section><section class="panel" id="api" role="tabpanel">
 <h2>3. API</h2>
 <p>Click <b>Spec</b> to see the request, response and rules of each API.</p>
@@ -375,13 +409,12 @@ LIMIT 1;</pre></div></div><div class="specsrc" id="spec-api-history" data-title=
 <p>路径前缀：<code>/pointSys/app/point/</code>。所有接口均为 <code>POST</code>、JSON 请求体，外层结构 <code>{ success, code, message, result }</code>；出错时 <code>success = false</code>，错误码在 <code>message</code> 中。所有接口都校验 <code>x-auth-key</code> 请求头。</p>
 <div class="scroll"><table class="apiidx">
   <tr><th style="width:24%">API</th><th>作用</th><th style="width:18%">状态</th><th style="width:10%"></th></tr>
-  <tr class="rvnew"><td><a href="#api" class="ref">tradingTask/get</a></td><td>任务信息、今日汇总及客户账户（Earn 页、交易卡片）。</td><td>已上线 · 新增 3 个字段</td><td><button type="button" class="specbtn" data-spec="api-get">Spec</button></td></tr><tr class="rvnew"><td><a href="#api" class="ref">guest/tradingTask/get</a></td><td>未登录游客版本：任务规则，不含个人数据。</td><td>新增</td><td><button type="button" class="specbtn" data-spec="api-guest">Spec</button></td></tr><tr><td><a href="#api" class="ref">tradingTask/getHistory</a></td><td>按日的交易积分历史（Earn 页 History 标签）。</td><td>已上线</td><td><button type="button" class="specbtn" data-spec="api-history">Spec</button></td></tr><tr><td><a href="#api" class="ref">coin/summary</a></td><td>积分余额（Coins 页顶部）。</td><td>已上线</td><td><button type="button" class="specbtn" data-spec="api-summary">Spec</button></td></tr><tr><td><a href="#api" class="ref">coin/listAvailable</a></td><td>未过期的积分批次（Coins 页 Available 标签）。</td><td>已上线</td><td><button type="button" class="specbtn" data-spec="api-available">Spec</button></td></tr><tr><td><a href="#api" class="ref">coin/listExpired</a></td><td>已过期的积分批次（Coins 页 Expired 标签）。</td><td>已上线</td><td><button type="button" class="specbtn" data-spec="api-expired">Spec</button></td></tr><tr><td><a href="#api" class="ref">coin/ledger</a></td><td>积分变动流水（Coins 页 History 标签）。</td><td>已上线</td><td><button type="button" class="specbtn" data-spec="api-ledger">Spec</button></td></tr>
+  <tr class="rvnew"><td><a href="#api" class="ref">tradingTask/get</a></td><td>任务信息、今日汇总及客户账户（Earn 页、交易卡片）。</td><td>已上线 · 待新增 3 个字段（G-2）</td><td><button type="button" class="specbtn" data-spec="api-get">Spec</button></td></tr><tr class="rvnew"><td><a href="#api" class="ref">guest/tradingTask/get</a></td><td>未登录游客版本：任务规则，不含个人数据。</td><td>尚未提供（G-1）</td><td><button type="button" class="specbtn" data-spec="api-guest">Spec</button></td></tr><tr><td><a href="#api" class="ref">tradingTask/getHistory</a></td><td>按日的交易积分历史（Earn 页 History 标签）。</td><td>已上线</td><td><button type="button" class="specbtn" data-spec="api-history">Spec</button></td></tr><tr><td><a href="#api" class="ref">coin/summary</a></td><td>积分余额（Coins 页顶部）。</td><td>已上线</td><td><button type="button" class="specbtn" data-spec="api-summary">Spec</button></td></tr><tr><td><a href="#api" class="ref">coin/listAvailable</a></td><td>未过期的积分批次（Coins 页 Available 标签）。</td><td>已上线</td><td><button type="button" class="specbtn" data-spec="api-available">Spec</button></td></tr><tr><td><a href="#api" class="ref">coin/listExpired</a></td><td>已过期的积分批次（Coins 页 Expired 标签）。</td><td>已上线</td><td><button type="button" class="specbtn" data-spec="api-expired">Spec</button></td></tr><tr><td><a href="#api" class="ref">coin/ledger</a></td><td>积分变动流水（Coins 页 History 标签）。</td><td>已上线</td><td><button type="button" class="specbtn" data-spec="api-ledger">Spec</button></td></tr>
 </table></div>
 </section><section class="panel" id="req" role="tabpanel">
 <h2>2. 待办需求 — 2026-10-19</h2>
 <p>共两项。完成并部署到 UAT 后请告知 G-1 的路径；QA 对两项做小范围测试后更新本页。</p>
 
-<div class="rvnew">
 <h3>G-1. 新接口 <code>guest/tradingTask/get</code> <span class="pending">OPEN</span></h3>
 <p>未登录用户（无 <code>clientId</code>、无 token）也能在 Earn 页看到任务规则。产品已确认：所有游客一律按客户组 <code>direct_client</code> 的配置展示。</p>
 <ul>
@@ -399,19 +432,54 @@ LIMIT 1;</pre></div></div><div class="specsrc" id="spec-api-history" data-title=
 </ul>
 <p><button type="button" class="specbtn" data-spec="api-guest">Spec guest/tradingTask/get</button></p>
 
-<h3>G-2. <code>tradingTask/get</code> 新增 3 个字段 <span class="pending">OPEN</span></h3>
-<p>用于 Earn 页的账户等级功能（已登录客户）。等级名称和入金门槛由前端保存；后端只返回以下数据。</p>
-<ol class="conds">
-  <li><code>accounts[].group</code>（字符串）：该账户的 MT5 组，<b>原样返回完整组名</b>（如 <code>Direct\VIP1</code>、<code>1F\Direct\Mini10</code>），不要截取。即 <code>buildAccounts</code> 已从 <code>mt5_users</code> 查到的值。所有账户都返回，包括 <code>eligible = false</code>。</li>
-  <li><code>accounts[].lifetimeDeposit</code>（数字，USD）：该账户已批准入金总额；从未入金 = <code>0</code>。<pre>SELECT login_id, SUM(amount_converted) AS deposit_usd   -- amount_converted is always USD
+<h3>G-2. 在现有接口 <code>tradingTask/get</code> 中新增 3 个字段 <span class="pending">OPEN</span></h3>
+<p><code>tradingTask/get</code> 是<b>已上线</b>的接口。本需求<b>只新增 3 个字段</b>，用于 Earn 页的账户等级功能（已登录客户）。等级名称和入金门槛由前端保存；后端只返回以下数据。</p>
+
+<h4>保持不变</h4>
+<ul>
+  <li>路径、请求参数、鉴权：不变。</li>
+  <li><b>所有现有字段保持不变</b>（名称、类型、含义）：<code>tradingTask</code>、全部 <code>program</code>、全部 <code>today</code>、<code>selectedAccountId</code>、<code>accounts[].id</code>、<code>accounts[].eligible</code>、<code>accounts[].rates</code>。不删除、不改名任何字段。</li>
+  <li>现有逻辑不变：任务选择、<code>today</code> 的计算、<code>accounts</code> 的列表与排序、<code>rates</code> 的过滤与排序方式。</li>
+</ul>
+
+<h4>新增</h4>
+<div class="scroll"><table>
+  <tr><th style="width:22%">新字段</th><th style="width:16%">位置</th><th style="width:12%">类型</th><th>取值方式</th></tr>
+  <tr><td><code>group</code></td><td><code>accounts[]</code> 的每个元素中</td><td>string</td>
+      <td>即 <code>buildAccounts</code> 为计算 <code>rates</code> 已从 <code>mt5_users</code> 查到的 MT5 组（无需额外查询）。<b>原样返回完整组名</b>，如 <code>Direct\VIP1</code>、<code>1F\Direct\Mini10</code>；不要截取。所有账户都返回，包括 <code>eligible = false</code>。查不到组 → <code>null</code>。</td></tr>
+  <tr><td><code>lifetimeDeposit</code></td><td><code>accounts[]</code> 的每个元素中</td><td>decimal, USD</td>
+      <td>该账户已批准入金总额。每个客户按下方 SQL 查询一次，再按 <code>login_id</code> 对应到账户。无记录的账户 → <code>0</code>。</td></tr>
+  <tr><td><code>tiers</code></td><td><code>result</code> 顶层，与 <code>accounts</code> 同级</td><td>array of <code>{ group, rates }</code></td>
+      <td>取当前任务在 <code>point_task_trading_point_conversion</code> 中的费率行（<code>deleted = 0</code>），按 <code>mt5_group</code> 分组，每组一项。<code>group</code> = <code>mt5_group</code> 完整组名；<code>rates</code> 与 <code>accounts[].rates</code> 使用<b>同一个方法</b> <code>buildRates</code> 生成，保证两处一致。<code>rates</code> 为空的组不返回。无需排序。<code>tradingTask = false</code> 时不返回。</td></tr>
+</table></div>
+<p class="specmeta"><code>lifetimeDeposit</code> 的 SQL：</p>
+<pre>SELECT login_id, SUM(amount_converted) AS deposit_usd   -- amount_converted is always USD
 FROM bo_client_deposit_proposal
 WHERE proposal_status = 2                                      -- approved
   AND client_id = #{clientId}
-GROUP BY login_id</pre></li>
-  <li>顶层 <code>tiers[]</code>：当前任务中配置了费率的每个 MT5 组一项 <code>{ group, rates }</code>。来源：<code>point_task_trading_point_conversion</code>（当前任务，<code>deleted = 0</code>），按 <code>mt5_group</code> 分组。<code>rates</code> 必须与 <code>accounts[].rates</code> 使用<b>同一个方法</b> <code>buildRates</code> 生成，保证两处一致。无需排序。<code>tradingTask = false</code> 时不返回。</li>
-</ol>
+GROUP BY login_id</pre>
+<p class="specmeta">新增后的响应（仅摘录相关部分）：</p>
+<pre>{
+  "tradingTask": true,
+  "program": { ...unchanged... },
+  "today":   { ...unchanged... },
+  "selectedAccountId": 31000001,
+  "accounts": [
+    { "id": 31000001, "eligible": true, "rates": [ ...unchanged... ],
+      "group": "Direct\\Mini400",          // NEW
+      "lifetimeDeposit": 150.0 },            // NEW
+    { "id": 31000002, "eligible": false, "rates": [],
+      "group": "1F\\Direct\\Mini10",       // NEW
+      "lifetimeDeposit": 0 }                 // NEW
+  ],
+  "tiers": [                                 // NEW
+    { "group": "Direct\\Mini400", "rates": [ { "type": "symbol_group", "value": "metal", "ptsPerLot": 70 }, "..." ] },
+    { "group": "Direct\\Mini10",  "rates": [ "..." ] },
+    { "group": "Direct\\VIP1",    "rates": [ "..." ] },
+    { "group": "Direct\\MIVIP",   "rates": [ "..." ] }
+  ]
+}</pre>
 <p><button type="button" class="specbtn" data-spec="api-get">Spec tradingTask/get</button></p>
-</div>
 </section><section class="panel" id="api" role="tabpanel">
 <h2>3. API</h2>
 <p>点击 <b>Spec</b> 查看各接口的请求、响应和规则。</p>
@@ -601,13 +669,12 @@ LIMIT 1;</pre></div></div><div class="specsrc" id="spec-api-history" data-title=
 <p>Tiền tố đường dẫn: <code>/pointSys/app/point/</code>. Mọi API dùng <code>POST</code>, body JSON, vỏ <code>{ success, code, message, result }</code>; lỗi: <code>success = false</code>, mã lỗi ở <code>message</code>. Mọi API kiểm header <code>x-auth-key</code>.</p>
 <div class="scroll"><table class="apiidx">
   <tr><th style="width:24%">API</th><th>Vai trò</th><th style="width:18%">Trạng thái</th><th style="width:10%"></th></tr>
-  <tr class="rvnew"><td><a href="#api" class="ref">tradingTask/get</a></td><td>Thông tin chương trình, tổng hợp hôm nay và tài khoản của khách (trang Earn, thẻ trading).</td><td>Đang chạy · thêm 3 trường</td><td><button type="button" class="specbtn" data-spec="api-get">Spec</button></td></tr><tr class="rvnew"><td><a href="#api" class="ref">guest/tradingTask/get</a></td><td>Bản cho khách chưa đăng nhập: luật chơi của chương trình, không có dữ liệu cá nhân.</td><td>Mới</td><td><button type="button" class="specbtn" data-spec="api-guest">Spec</button></td></tr><tr><td><a href="#api" class="ref">tradingTask/getHistory</a></td><td>Lịch sử coin trading theo ngày (tab History của trang Earn).</td><td>Đang chạy</td><td><button type="button" class="specbtn" data-spec="api-history">Spec</button></td></tr><tr><td><a href="#api" class="ref">coin/summary</a></td><td>Số dư coin (đầu trang Coins).</td><td>Đang chạy</td><td><button type="button" class="specbtn" data-spec="api-summary">Spec</button></td></tr><tr><td><a href="#api" class="ref">coin/listAvailable</a></td><td>Các lô coin còn hạn (tab Available của trang Coins).</td><td>Đang chạy</td><td><button type="button" class="specbtn" data-spec="api-available">Spec</button></td></tr><tr><td><a href="#api" class="ref">coin/listExpired</a></td><td>Các lô coin đã hết hạn (tab Expired của trang Coins).</td><td>Đang chạy</td><td><button type="button" class="specbtn" data-spec="api-expired">Spec</button></td></tr><tr><td><a href="#api" class="ref">coin/ledger</a></td><td>Lịch sử biến động coin (tab History của trang Coins).</td><td>Đang chạy</td><td><button type="button" class="specbtn" data-spec="api-ledger">Spec</button></td></tr>
+  <tr class="rvnew"><td><a href="#api" class="ref">tradingTask/get</a></td><td>Thông tin chương trình, tổng hợp hôm nay và tài khoản của khách (trang Earn, thẻ trading).</td><td>Đang chạy · chờ thêm 3 trường (G-2)</td><td><button type="button" class="specbtn" data-spec="api-get">Spec</button></td></tr><tr class="rvnew"><td><a href="#api" class="ref">guest/tradingTask/get</a></td><td>Bản cho khách chưa đăng nhập: luật chơi của chương trình, không có dữ liệu cá nhân.</td><td>Chưa có (G-1)</td><td><button type="button" class="specbtn" data-spec="api-guest">Spec</button></td></tr><tr><td><a href="#api" class="ref">tradingTask/getHistory</a></td><td>Lịch sử coin trading theo ngày (tab History của trang Earn).</td><td>Đang chạy</td><td><button type="button" class="specbtn" data-spec="api-history">Spec</button></td></tr><tr><td><a href="#api" class="ref">coin/summary</a></td><td>Số dư coin (đầu trang Coins).</td><td>Đang chạy</td><td><button type="button" class="specbtn" data-spec="api-summary">Spec</button></td></tr><tr><td><a href="#api" class="ref">coin/listAvailable</a></td><td>Các lô coin còn hạn (tab Available của trang Coins).</td><td>Đang chạy</td><td><button type="button" class="specbtn" data-spec="api-available">Spec</button></td></tr><tr><td><a href="#api" class="ref">coin/listExpired</a></td><td>Các lô coin đã hết hạn (tab Expired của trang Coins).</td><td>Đang chạy</td><td><button type="button" class="specbtn" data-spec="api-expired">Spec</button></td></tr><tr><td><a href="#api" class="ref">coin/ledger</a></td><td>Lịch sử biến động coin (tab History của trang Coins).</td><td>Đang chạy</td><td><button type="button" class="specbtn" data-spec="api-ledger">Spec</button></td></tr>
 </table></div>
 </section><section class="panel" id="req" role="tabpanel">
 <h2>2. Yêu cầu đang mở — 2026-10-19</h2>
 <p>Hai hạng mục. Làm xong và đưa lên UAT thì báo đường dẫn của G-1; bên QA test nhỏ cả hai rồi cập nhật trang này.</p>
 
-<div class="rvnew">
 <h3>G-1. API mới <code>guest/tradingTask/get</code> <span class="pending">OPEN</span></h3>
 <p>Khách chưa đăng nhập (không có <code>clientId</code>, không có token) vẫn xem được luật chơi trên trang Earn. Bên sản phẩm chấp nhận: mọi khách chưa đăng nhập đều được hiện theo cấu hình của nhóm khách <code>direct_client</code>.</p>
 <ul>
@@ -625,19 +692,54 @@ LIMIT 1;</pre></div></div><div class="specsrc" id="spec-api-history" data-title=
 </ul>
 <p><button type="button" class="specbtn" data-spec="api-guest">Spec guest/tradingTask/get</button></p>
 
-<h3>G-2. <code>tradingTask/get</code> thêm 3 trường <span class="pending">OPEN</span></h3>
-<p>Cho tính năng hạng tài khoản trên trang Earn (khách đã đăng nhập). Tên hạng và ngưỡng nạp do front-end giữ; backend chỉ trả dữ liệu dưới đây.</p>
-<ol class="conds">
-  <li><code>accounts[].group</code> (string): nhóm MT5 của tài khoản, <b>nguyên tên đầy đủ</b> (ví dụ <code>Direct\VIP1</code>, <code>1F\Direct\Mini10</code>), không cắt. Chính là giá trị <code>buildAccounts</code> đã đọc từ <code>mt5_users</code>. Có ở mọi tài khoản, kể cả <code>eligible = false</code>.</li>
-  <li><code>accounts[].lifetimeDeposit</code> (số, USD): tổng tiền nạp đã duyệt của tài khoản; chưa từng nạp = <code>0</code>. <pre>SELECT login_id, SUM(amount_converted) AS deposit_usd   -- amount_converted is always USD
+<h3>G-2. Bổ sung 3 trường vào API đã có <code>tradingTask/get</code> <span class="pending">OPEN</span></h3>
+<p><code>tradingTask/get</code> là API <b>đang chạy</b>. Yêu cầu này <b>chỉ thêm 3 trường</b> cho tính năng hạng tài khoản trên trang Earn (khách đã đăng nhập). Tên hạng và ngưỡng nạp do front-end giữ; backend chỉ trả dữ liệu dưới đây.</p>
+
+<h4>Giữ nguyên</h4>
+<ul>
+  <li>Đường dẫn, request, xác thực: không đổi.</li>
+  <li><b>Mọi trường đang trả giữ nguyên</b> tên, kiểu và ý nghĩa: <code>tradingTask</code>, toàn bộ <code>program</code>, toàn bộ <code>today</code>, <code>selectedAccountId</code>, <code>accounts[].id</code>, <code>accounts[].eligible</code>, <code>accounts[].rates</code>. Không bỏ, không đổi tên trường nào.</li>
+  <li>Logic hiện có giữ nguyên: chọn chương trình, tính <code>today</code>, danh sách và thứ tự <code>accounts</code>, cách lọc và xếp <code>rates</code>.</li>
+</ul>
+
+<h4>Thêm mới</h4>
+<div class="scroll"><table>
+  <tr><th style="width:22%">Trường mới</th><th style="width:16%">Vị trí</th><th style="width:12%">Kiểu</th><th>Cách lấy</th></tr>
+  <tr><td><code>group</code></td><td>Trong mỗi phần tử <code>accounts[]</code></td><td>string</td>
+      <td>Nhóm MT5 mà <code>buildAccounts</code> đã đọc từ <code>mt5_users</code> để tính <code>rates</code> (không truy vấn thêm). Trả <b>nguyên tên đầy đủ</b>, ví dụ <code>Direct\VIP1</code>, <code>1F\Direct\Mini10</code>; không cắt. Có ở mọi tài khoản, kể cả <code>eligible = false</code>. Không tìm thấy nhóm → <code>null</code>.</td></tr>
+  <tr><td><code>lifetimeDeposit</code></td><td>Trong mỗi phần tử <code>accounts[]</code></td><td>decimal, USD</td>
+      <td>Tổng tiền nạp đã duyệt của tài khoản. Chạy một lần cho mỗi khách theo câu SQL dưới, rồi gán theo <code>login_id</code>. Tài khoản không có dòng nào → <code>0</code>.</td></tr>
+  <tr><td><code>tiers</code></td><td>Cấp ngoài cùng của <code>result</code>, ngang hàng <code>accounts</code></td><td>array of <code>{ group, rates }</code></td>
+      <td>Lấy các dòng tỷ lệ của task hiện tại trong <code>point_task_trading_point_conversion</code> (<code>deleted = 0</code>), gom theo <code>mt5_group</code>; mỗi nhóm một phần tử. <code>group</code> = <code>mt5_group</code> nguyên tên; <code>rates</code> sinh bằng <b>cùng hàm</b> <code>buildRates</code> với <code>accounts[].rates</code>, để hai chỗ luôn khớp. Nhóm có <code>rates</code> rỗng thì bỏ. Không cần sắp xếp. Không trả khi <code>tradingTask = false</code>.</td></tr>
+</table></div>
+<p class="specmeta">Câu SQL lấy <code>lifetimeDeposit</code>:</p>
+<pre>SELECT login_id, SUM(amount_converted) AS deposit_usd   -- amount_converted is always USD
 FROM bo_client_deposit_proposal
 WHERE proposal_status = 2                                      -- approved
   AND client_id = #{clientId}
-GROUP BY login_id</pre></li>
-  <li><code>tiers[]</code> ở cấp ngoài cùng: mỗi nhóm MT5 có dòng tỷ lệ trong task hiện tại là một phần tử <code>{ group, rates }</code>. Nguồn: <code>point_task_trading_point_conversion</code> (task hiện tại, <code>deleted = 0</code>), nhóm theo <code>mt5_group</code>. <code>rates</code> phải sinh bằng <b>cùng hàm</b> <code>buildRates</code> với <code>accounts[].rates</code>, để hai chỗ luôn khớp. Không cần sắp xếp. Không trả khi <code>tradingTask = false</code>.</li>
-</ol>
+GROUP BY login_id</pre>
+<p class="specmeta">Response sau khi thêm (chỉ trích phần liên quan):</p>
+<pre>{
+  "tradingTask": true,
+  "program": { ...unchanged... },
+  "today":   { ...unchanged... },
+  "selectedAccountId": 31000001,
+  "accounts": [
+    { "id": 31000001, "eligible": true, "rates": [ ...unchanged... ],
+      "group": "Direct\\Mini400",          // NEW
+      "lifetimeDeposit": 150.0 },            // NEW
+    { "id": 31000002, "eligible": false, "rates": [],
+      "group": "1F\\Direct\\Mini10",       // NEW
+      "lifetimeDeposit": 0 }                 // NEW
+  ],
+  "tiers": [                                 // NEW
+    { "group": "Direct\\Mini400", "rates": [ { "type": "symbol_group", "value": "metal", "ptsPerLot": 70 }, "..." ] },
+    { "group": "Direct\\Mini10",  "rates": [ "..." ] },
+    { "group": "Direct\\VIP1",    "rates": [ "..." ] },
+    { "group": "Direct\\MIVIP",   "rates": [ "..." ] }
+  ]
+}</pre>
 <p><button type="button" class="specbtn" data-spec="api-get">Spec tradingTask/get</button></p>
-</div>
 </section><section class="panel" id="api" role="tabpanel">
 <h2>3. API</h2>
 <p>Bấm <b>Spec</b> để xem request, response và quy tắc của từng API.</p>

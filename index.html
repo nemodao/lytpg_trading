@@ -160,13 +160,17 @@ table.apiidx td { vertical-align: middle; }
 <ul>
   <li>Suggested path <code>/pointSys/app/point/guest/tradingTask/get</code> (backend may rename; please tell us).</li>
   <li>No token check, no <code>clientId</code> needed; if sent, it is ignored. Keep checking <code>x-auth-key</code>; open anonymous access in <code>t_uri_access_rule</code>. Supports <code>currentTime</code> like the other APIs.</li>
-  <li>Reuse <code>getAppTradingTaskConfig</code> with fixed parameters: <table>
-      <tr><th style="width:40%">Parameter</th><th>Value</th></tr>
-      <tr><td><code>groupCode</code></td><td><code>direct_client</code>, hard-coded</td></tr>
-      <tr><td><code>bookType</code></td><td><code>9</code> (unknown)</td></tr>
-      <tr><td><code>kycTime</code>, <code>ftdTime</code>, <code>firstTradeTime</code></td><td><code>0</code></td></tr>
-      <tr><td><code>clientId</code></td><td><code>null</code></td></tr>
-    </table> With <code>clientId = null</code>, the existing SQL already gives the required behaviour: programs hidden from everyone are not shown and the blacklist does not apply. No SQL change needed. Equivalent SQL is in the API spec.</li>
+  <li>In code, call the method <code>PointTaskTradingMapper.getAppTradingTaskConfig</code> again (as in <code>AppPointTradeTaskServiceImpl</code> line 124). These are <b>method arguments</b>, not request parameters: this API has no request parameters except <code>currentTime</code> for testing. The logged-in version reads these values from <code>crm_customer_base</code> by <code>clientId</code>; a guest has no <code>clientId</code>, so skip that read and pass fixed values: <div class="scroll"><table>
+      <tr><th style="width:22%">Method argument</th><th>Logged-in version (current)</th><th style="width:30%">Guest version</th></tr>
+      <tr><td><code>groupCode</code></td><td><code>crm_customer_base.group_code</code></td><td><code>direct_client</code>, hard-coded</td></tr>
+      <tr><td><code>promoTable</code></td><td><code>PromoTableEnum.POINT_PROGRAM.getTableName()</code></td><td>Unchanged</td></tr>
+      <tr><td><code>bookType</code></td><td><code>crm_customer_base.client_book_type</code>; if empty, <code>UNKNOWN_BOOK_TYPE</code> (9)</td><td><code>UNKNOWN_BOOK_TYPE</code> (9)</td></tr>
+      <tr><td><code>kycTime</code></td><td><code>crm_customer_base.kyc_approve_time</code></td><td><code>0</code></td></tr>
+      <tr><td><code>ftdTime</code></td><td><code>crm_customer_base.first_deposit_time</code></td><td><code>0</code></td></tr>
+      <tr><td><code>firstTradeTime</code></td><td><code>crm_customer_base.first_real_trade_time</code></td><td><code>0</code></td></tr>
+      <tr><td><code>clientId</code></td><td>From the request: <code>clientId</code></td><td><code>null</code></td></tr>
+      <tr><td><code>now</code></td><td>System time, or <code>currentTime</code> if sent in the request</td><td>Unchanged</td></tr>
+    </table></div> With <code>clientId = null</code>, the existing SQL already gives the required behaviour: programs hidden from everyone are not shown and the blacklist does not apply. No SQL change needed. Equivalent SQL is in the API spec.</li>
   <li>Response has the same structure as <code>tradingTask/get</code>: <code>program</code> built by the existing <code>buildProgram</code>; <code>today</code> = result of <code>buildToday(null, …)</code> (<code>not_started</code>, all numbers 0); <code>accounts = []</code>; no <code>selectedAccountId</code>, no <code>tiers</code>.</li>
   <li>Only this API. The other five APIs are personal data; guests do not need them.</li>
 </ul>
@@ -497,13 +501,17 @@ LIMIT 1;</pre></div></div><div class="specsrc" id="spec-api-history" data-title=
 <ul>
   <li>建议路径 <code>/pointSys/app/point/guest/tradingTask/get</code>（后端可自定，做好后告知）。</li>
   <li>不校验 token，不需要 <code>clientId</code>；即使传了也忽略。保留 <code>x-auth-key</code> 校验；在 <code>t_uri_access_rule</code> 中放开为免登录访问。与其他接口一样支持 <code>currentTime</code>。</li>
-  <li>复用 <code>getAppTradingTaskConfig</code>，参数固定为：<table>
-      <tr><th style="width:40%">参数</th><th>值</th></tr>
-      <tr><td><code>groupCode</code></td><td><code>direct_client</code>，写死在代码中</td></tr>
-      <tr><td><code>bookType</code></td><td><code>9</code>（未知）</td></tr>
-      <tr><td><code>kycTime</code>, <code>ftdTime</code>, <code>firstTradeTime</code></td><td><code>0</code></td></tr>
-      <tr><td><code>clientId</code></td><td><code>null</code></td></tr>
-    </table> 当 <code>clientId = null</code> 时，现有 SQL 已得到所需效果：对所有人隐藏的任务不展示，黑名单不生效。无需修改 SQL。等价 SQL 见接口规格。</li>
+  <li>在代码中再次调用方法 <code>PointTaskTradingMapper.getAppTradingTaskConfig</code>（同 <code>AppPointTradeTaskServiceImpl</code> 第 124 行）。以下是<b>方法入参</b>，不是请求参数：本接口除测试用的 <code>currentTime</code> 外没有任何请求参数。登录版按 <code>clientId</code> 从 <code>crm_customer_base</code> 读取这些值；游客没有 <code>clientId</code>，因此跳过该读取步骤，直接传固定值：<div class="scroll"><table>
+      <tr><th style="width:22%">方法入参</th><th>登录版（现有）</th><th style="width:30%">游客版</th></tr>
+      <tr><td><code>groupCode</code></td><td><code>crm_customer_base.group_code</code></td><td><code>direct_client</code>，写死在代码中</td></tr>
+      <tr><td><code>promoTable</code></td><td><code>PromoTableEnum.POINT_PROGRAM.getTableName()</code></td><td>保持不变</td></tr>
+      <tr><td><code>bookType</code></td><td><code>crm_customer_base.client_book_type</code>；为空时用 <code>UNKNOWN_BOOK_TYPE</code>（9）</td><td><code>UNKNOWN_BOOK_TYPE</code> (9)</td></tr>
+      <tr><td><code>kycTime</code></td><td><code>crm_customer_base.kyc_approve_time</code></td><td><code>0</code></td></tr>
+      <tr><td><code>ftdTime</code></td><td><code>crm_customer_base.first_deposit_time</code></td><td><code>0</code></td></tr>
+      <tr><td><code>firstTradeTime</code></td><td><code>crm_customer_base.first_real_trade_time</code></td><td><code>0</code></td></tr>
+      <tr><td><code>clientId</code></td><td>取自请求：<code>clientId</code></td><td><code>null</code></td></tr>
+      <tr><td><code>now</code></td><td>系统时间；请求中传了 <code>currentTime</code> 则用它</td><td>保持不变</td></tr>
+    </table></div> 当 <code>clientId = null</code> 时，现有 SQL 已得到所需效果：对所有人隐藏的任务不展示，黑名单不生效。无需修改 SQL。等价 SQL 见接口规格。</li>
   <li>响应结构与 <code>tradingTask/get</code> 相同：<code>program</code> 由现有 <code>buildProgram</code> 生成；<code>today</code> = <code>buildToday(null, …)</code> 的结果（<code>not_started</code>，各数值为 0）；<code>accounts = []</code>；不返回 <code>selectedAccountId</code>，不返回 <code>tiers</code>。</li>
   <li>只做这一个接口。其余 5 个接口是个人数据，游客不需要。</li>
 </ul>
@@ -834,13 +842,17 @@ LIMIT 1;</pre></div></div><div class="specsrc" id="spec-api-history" data-title=
 <ul>
   <li>Đường dẫn đề xuất <code>/pointSys/app/point/guest/tradingTask/get</code> (backend có thể đổi, báo lại).</li>
   <li>Không kiểm token, không cần <code>clientId</code>; có gửi cũng bỏ qua. Vẫn kiểm <code>x-auth-key</code>; mở quyền truy cập không cần đăng nhập trong <code>t_uri_access_rule</code>. Hỗ trợ <code>currentTime</code> như các API khác.</li>
-  <li>Gọi lại <code>getAppTradingTaskConfig</code> với tham số cố định: <table>
-      <tr><th style="width:40%">Tham số</th><th>Giá trị</th></tr>
-      <tr><td><code>groupCode</code></td><td><code>direct_client</code>, viết cứng trong code</td></tr>
-      <tr><td><code>bookType</code></td><td><code>9</code> (chưa biết)</td></tr>
-      <tr><td><code>kycTime</code>, <code>ftdTime</code>, <code>firstTradeTime</code></td><td><code>0</code></td></tr>
-      <tr><td><code>clientId</code></td><td><code>null</code></td></tr>
-    </table> Với <code>clientId = null</code>, SQL hiện có tự cho đúng hành vi cần: chương trình bật cờ ẩn với mọi người không hiện, blacklist không áp dụng. Không cần sửa SQL. SQL tương đương ở spec của API.</li>
+  <li>Trong code, gọi lại hàm <code>PointTaskTradingMapper.getAppTradingTaskConfig</code> (giống <code>AppPointTradeTaskServiceImpl</code> dòng 124). Đây là <b>tham số truyền vào hàm</b>, không phải tham số request: request của API này không có tham số nào, trừ <code>currentTime</code> để test. Bản đăng nhập đọc các giá trị này từ <code>crm_customer_base</code> theo <code>clientId</code>; khách vãng lai không có <code>clientId</code> nên bỏ bước đọc đó và truyền giá trị cố định: <div class="scroll"><table>
+      <tr><th style="width:22%">Tham số của hàm</th><th>Bản đăng nhập (hiện tại)</th><th style="width:30%">Bản khách vãng lai</th></tr>
+      <tr><td><code>groupCode</code></td><td><code>crm_customer_base.group_code</code></td><td><code>direct_client</code>, viết cứng trong code</td></tr>
+      <tr><td><code>promoTable</code></td><td><code>PromoTableEnum.POINT_PROGRAM.getTableName()</code></td><td>Giữ nguyên</td></tr>
+      <tr><td><code>bookType</code></td><td><code>crm_customer_base.client_book_type</code>; trống thì <code>UNKNOWN_BOOK_TYPE</code> (9)</td><td><code>UNKNOWN_BOOK_TYPE</code> (9)</td></tr>
+      <tr><td><code>kycTime</code></td><td><code>crm_customer_base.kyc_approve_time</code></td><td><code>0</code></td></tr>
+      <tr><td><code>ftdTime</code></td><td><code>crm_customer_base.first_deposit_time</code></td><td><code>0</code></td></tr>
+      <tr><td><code>firstTradeTime</code></td><td><code>crm_customer_base.first_real_trade_time</code></td><td><code>0</code></td></tr>
+      <tr><td><code>clientId</code></td><td>Lấy từ request: <code>clientId</code></td><td><code>null</code></td></tr>
+      <tr><td><code>now</code></td><td>Giờ hệ thống, hoặc <code>currentTime</code> nếu request có gửi</td><td>Giữ nguyên</td></tr>
+    </table></div> Với <code>clientId = null</code>, SQL hiện có tự cho đúng hành vi cần: chương trình bật cờ ẩn với mọi người không hiện, blacklist không áp dụng. Không cần sửa SQL. SQL tương đương ở spec của API.</li>
   <li>Response cùng cấu trúc <code>tradingTask/get</code>: <code>program</code> dựng bằng <code>buildProgram</code> hiện có; <code>today</code> = kết quả <code>buildToday(null, …)</code> (<code>not_started</code>, mọi số bằng 0); <code>accounts = []</code>; không có <code>selectedAccountId</code>, không có <code>tiers</code>.</li>
   <li>Chỉ làm API này. Năm API còn lại là dữ liệu cá nhân, khách chưa đăng nhập không cần.</li>
 </ul>

@@ -124,11 +124,11 @@ table.apiidx td { vertical-align: middle; }
 </div>
 <template id="tpl-en">
 <h1>HSB Loyalty – Trading Task &amp; Coin</h1>
-<p class="sub">Trading Task module spec and coin APIs. Updated: 2026-10-19.</p>
+<p class="sub">Trading Task module spec and coin APIs. Updated: 2026-10-23.</p>
 <nav class="tabs" role="tablist"><button type="button" role="tab" data-tab="overview" aria-selected="false">1. Overview</button><button type="button" role="tab" data-tab="req" aria-selected="false">2. Open requests</button><button type="button" role="tab" data-tab="api" aria-selected="false">3. API</button><button type="button" role="tab" data-tab="engine" aria-selected="false">4. Engine</button><button type="button" role="tab" data-tab="config" aria-selected="false">5. HSB configuration</button><button type="button" role="tab" data-tab="log" aria-selected="false">6. Change log</button></nav>
 <section class="panel" id="overview" role="tabpanel">
 <h2>1. Overview</h2>
-<p>The Trading Task module of HSB Loyalty: clients trade on real accounts, every closed lot is converted into coins at the configured rate; coins go to the wallet and are used to redeem rewards. This page is the shared spec between product, backend and front-end and reflects the current code behaviour (accepted on UAT). Updated: 2026-10-19.</p>
+<p>The Trading Task module of HSB Loyalty: clients trade on real accounts, every closed lot is converted into coins at the configured rate; coins go to the wallet and are used to redeem rewards. This page is the shared spec between product, backend and front-end and reflects the current code behaviour (accepted on UAT). Updated: 2026-10-23.</p>
 
 <h3>How to read this page</h3>
 <ul>
@@ -200,7 +200,7 @@ GROUP BY login_id</pre>
       "lifetimeDeposit": 0 }                 // NEW
   ],
   "tiers": [                                 // NEW
-    { "group": "Direct\\Mini400", "rates": [ { "type": "symbol_group", "value": "metal", "ptsPerLot": 70 }, "..." ] },
+    { "group": "Direct\\Mini400", "rates": [ { "type": "symbol_group", "value": "metal", "ptsPerLot": 700 }, "..." ] },
     { "group": "Direct\\Mini10",  "rates": [ "..." ] },
     { "group": "Direct\\VIP1",    "rates": [ "..." ] },
     { "group": "Direct\\MIVIP",   "rates": [ "..." ] }
@@ -242,10 +242,10 @@ GROUP BY login_id</pre>
       "minHoldMinutes": 3,
       "creditDelayDays": 0,
       "expiryDays": 180,
-      "dailyMaxPoints": 2000,
+      "dailyMaxPoints": 20000,
       "tzMinutes": 420,
       "termsUrl": "https://.../terms.pdf",
-      "rateRange": { "min": 70.0, "max": 100.0 }
+      "rateRange": { "min": 400.0, "max": 1000.0 }
     },
     "today": {
       "periodKey": "2026-10-14",
@@ -265,11 +265,11 @@ GROUP BY login_id</pre>
         "group": "Direct\\Mini400",
         "lifetimeDeposit": 150.0,
         "rates": [
-          { "type": "symbol_group", "value": "energy", "ptsPerLot": 70.0 },
-          { "type": "symbol_group", "value": "forex",  "ptsPerLot": 70.0 },
-          { "type": "symbol_group", "value": "index",  "ptsPerLot": 70.0 },
-          { "type": "symbol_group", "value": "metal",  "ptsPerLot": 70.0 },
-          { "type": "any",          "value": "other",  "ptsPerLot": 70.0 }
+          { "type": "symbol_group", "value": "metal",  "ptsPerLot": 700.0 },
+          { "type": "symbol_group", "value": "energy", "ptsPerLot": 600.0 },
+          { "type": "symbol_group", "value": "forex",  "ptsPerLot": 500.0 },
+          { "type": "symbol_group", "value": "index",  "ptsPerLot": 400.0 },
+          { "type": "any",          "value": "other",  "ptsPerLot": 400.0 }
         ]
       },
       {
@@ -277,7 +277,7 @@ GROUP BY login_id</pre>
         "eligible": true,
         "group": "Direct\\VIP1",
         "lifetimeDeposit": 1250.0,
-        "rates": [ "...5 rows, ptsPerLot 90.0..." ]
+        "rates": [ "...metal 900, energy 800, forex 700, index 600, other 600..." ]
       },
       {
         "id": 31000003,
@@ -289,9 +289,9 @@ GROUP BY login_id</pre>
     ],
     "tiers": [
       { "group": "Direct\\Mini400", "rates": [ "...same 5 rows as account 31000001..." ] },
-      { "group": "Direct\\Mini10",  "rates": [ "...5 rows, ptsPerLot 80.0..." ] },
-      { "group": "Direct\\VIP1",    "rates": [ "...5 rows, ptsPerLot 90.0..." ] },
-      { "group": "Direct\\MIVIP",   "rates": [ "...5 rows, ptsPerLot 100.0..." ] }
+      { "group": "Direct\\Mini10",  "rates": [ "...metal 800, energy 700, forex 600, index 500, other 500..." ] },
+      { "group": "Direct\\VIP1",    "rates": [ "...metal 900, energy 800, forex 700, index 600, other 600..." ] },
+      { "group": "Direct\\MIVIP",   "rates": [ "...metal 1000, energy 900, forex 800, index 700, other 700..." ] }
     ]
   },
   "extraData": null,
@@ -313,10 +313,10 @@ GROUP BY login_id</pre></div></div><div class="specsrc" id="spec-api-guest" data
       "minHoldMinutes": 3,
       "creditDelayDays": 0,
       "expiryDays": 180,
-      "dailyMaxPoints": 2000,
+      "dailyMaxPoints": 20000,
       "tzMinutes": 420,
       "termsUrl": "https://.../terms.pdf",
-      "rateRange": { "min": 70.0, "max": 100.0 }
+      "rateRange": { "min": 400.0, "max": 1000.0 }
     },
     "today": {
       "periodKey": "2026-10-19",
@@ -414,7 +414,8 @@ LIMIT 1;</pre></div></div><div class="specsrc" id="spec-api-history" data-title=
   <tr><th style="width:34%">Item</th><th>Value</th></tr>
   <tr><td>Client group</td><td><code>direct_client</code></td></tr>
   <tr><td>Mode</td><td><code>in-day</code> (T+0)</td></tr>
-  <tr><td>Cap per client per day</td><td>2.000 coin</td></tr>
+  <tr><td>Cap per client per day</td><td>20.000 coin</td></tr>
+  <tr><td>Cash value per coin</td><td>0 (<code>cash_value_per_point_unit</code>)</td></tr>
   <tr><td>Coin validity</td><td>180 days</td></tr>
   <tr><td>Minimum holding time</td><td>180 seconds</td></tr>
   <tr><td>Display</td><td>From sign-up (<code>signup</code>)</td></tr>
@@ -424,11 +425,11 @@ LIMIT 1;</pre></div></div><div class="specsrc" id="spec-api-history" data-title=
 </table>
 
 <h3>Coins per lot</h3>
-<p>Each MT5 group has 5 rows with the same rate: <code>symbol_group</code> metal, forex, energy, index and one <code>any</code> row = <code>other</code> (covers stocks and all other symbols).</p>
-<table>
-  <tr><th style="width:34%">MT5 group</th><th>Coin / lot</th></tr>
-  <tr><td><code>Direct\Mini400</code></td><td>70</td></tr><tr><td><code>Direct\Mini10</code></td><td>80</td></tr><tr><td><code>Direct\VIP1</code></td><td>90</td></tr><tr><td><code>Direct\MIVIP</code></td><td>100</td></tr>
-</table>
+<p>Confirmed on 2026-10-23. Each MT5 group has 5 rows: 4 <code>symbol_group</code> rows (index, forex, energy, metal) and one <code>any</code> row = <code>other</code>. The "Others" column is the <code>any</code> row: it covers stocks (the engine puts them in group <code>stocks</code>, which has no row of its own), crypto and every other symbol. Do not set "others" as <code>symbol_group</code> other, or stocks would earn 0 coins.</p>
+<div class="scroll"><table>
+  <tr><th style="width:24%">MT5 group</th><th>index</th><th>forex</th><th>energy</th><th>metal</th><th>Others</th></tr>
+  <tr><td><code>Direct\Mini400</code></td><td>400</td><td>500</td><td>600</td><td>700</td><td>400</td></tr><tr><td><code>Direct\Mini10</code></td><td>500</td><td>600</td><td>700</td><td>800</td><td>500</td></tr><tr><td><code>Direct\VIP1</code></td><td>600</td><td>700</td><td>800</td><td>900</td><td>600</td></tr><tr><td><code>Direct\MIVIP</code></td><td>700</td><td>800</td><td>900</td><td>1000</td><td>700</td></tr>
+</table></div>
 <p>Other groups, including variants such as <code>1F\Direct\Mini10</code>, intentionally earn no coins.</p>
 
 <h3>Account tiers (kept by the front-end)</h3>
@@ -449,7 +450,7 @@ LIMIT 1;</pre></div></div><div class="specsrc" id="spec-api-history" data-title=
 <h2>6. Change log</h2>
 <table>
   <tr><th style="width:14%">Date</th><th>Content</th><th style="width:16%">Status</th></tr>
-  <tr class="rvnew"><td>2026-10-19</td><td>G-1: API for guests. G-2: <code>tradingTask/get</code> adds <code>group</code>, <code>lifetimeDeposit</code>, <code>tiers</code>.</td><td><span class="pending">OPEN</span></td></tr><tr><td>2026-10-14</td><td>UAT test data for the front-end: 10 clients, 6 APIs, 100% match. HSB configuration created on UAT.</td><td>Done</td></tr><tr><td>2026-10-12</td><td>Engine changed after acceptance: over-cap deal = <code>-2</code>; release time in <code>delayed</code> mode = 00:00 of trading day + N; shared lock; MT5 group matched case-insensitively. Accepted by code review.</td><td>Done</td></tr><tr><td>2026-10-12</td><td>Added <code>minHoldSeconds</code>, <code>termsUrl</code>, <code>rateRange</code> to <code>tradingTask/get</code>.</td><td>Done, test passed</td></tr><tr><td>2026-10-12</td><td>Full test of both engines + 6 APIs on UAT: 110/110 API calls matched, DB data matched column by column.</td><td>Passed</td></tr><tr><td>2026-10-09</td><td>First code review; issues sent to backend.</td><td>Fixed</td></tr>
+  <tr><td>2026-10-23</td><td>New HSB configuration: 400–1000 coins per lot by group and product type, cap 20,000 coins per day, GMT+7, cash value per coin 0. Rebuilt on UAT and checked through the app API.</td><td>Done</td></tr><tr class="rvnew"><td>2026-10-19</td><td>G-1: API for guests. G-2: <code>tradingTask/get</code> adds <code>group</code>, <code>lifetimeDeposit</code>, <code>tiers</code>.</td><td><span class="pending">OPEN</span></td></tr><tr><td>2026-10-14</td><td>UAT test data for the front-end: 10 clients, 6 APIs, 100% match. HSB configuration created on UAT.</td><td>Done</td></tr><tr><td>2026-10-12</td><td>Engine changed after acceptance: over-cap deal = <code>-2</code>; release time in <code>delayed</code> mode = 00:00 of trading day + N; shared lock; MT5 group matched case-insensitively. Accepted by code review.</td><td>Done</td></tr><tr><td>2026-10-12</td><td>Added <code>minHoldSeconds</code>, <code>termsUrl</code>, <code>rateRange</code> to <code>tradingTask/get</code>.</td><td>Done, test passed</td></tr><tr><td>2026-10-12</td><td>Full test of both engines + 6 APIs on UAT: 110/110 API calls matched, DB data matched column by column.</td><td>Passed</td></tr><tr><td>2026-10-09</td><td>First code review; issues sent to backend.</td><td>Fixed</td></tr>
 </table>
 </section>
 
@@ -463,11 +464,11 @@ LIMIT 1;</pre></div></div><div class="specsrc" id="spec-api-history" data-title=
 </template>
 <template id="tpl-zh">
 <h1>HSB Loyalty – Trading Task &amp; Coin</h1>
-<p class="sub">交易任务模块与积分接口规格。更新：2026-10-19。</p>
+<p class="sub">交易任务模块与积分接口规格。更新：2026-10-23。</p>
 <nav class="tabs" role="tablist"><button type="button" role="tab" data-tab="overview" aria-selected="false">1. 概览</button><button type="button" role="tab" data-tab="req" aria-selected="false">2. 待办需求</button><button type="button" role="tab" data-tab="api" aria-selected="false">3. API</button><button type="button" role="tab" data-tab="engine" aria-selected="false">4. Engine</button><button type="button" role="tab" data-tab="config" aria-selected="false">5. HSB 配置</button><button type="button" role="tab" data-tab="log" aria-selected="false">6. 变更记录</button></nav>
 <section class="panel" id="overview" role="tabpanel">
 <h2>1. 概览</h2>
-<p>HSB Loyalty 的交易任务模块：客户用真实账户交易，每个平仓手数按配置的费率折算为积分；积分进入钱包，用于兑换礼品。本页是产品、后端与前端共用的规格，反映当前代码行为（已在 UAT 验收）。更新：2026-10-19。</p>
+<p>HSB Loyalty 的交易任务模块：客户用真实账户交易，每个平仓手数按配置的费率折算为积分；积分进入钱包，用于兑换礼品。本页是产品、后端与前端共用的规格，反映当前代码行为（已在 UAT 验收）。更新：2026-10-23。</p>
 
 <h3>阅读说明</h3>
 <ul>
@@ -539,7 +540,7 @@ GROUP BY login_id</pre>
       "lifetimeDeposit": 0 }                 // NEW
   ],
   "tiers": [                                 // NEW
-    { "group": "Direct\\Mini400", "rates": [ { "type": "symbol_group", "value": "metal", "ptsPerLot": 70 }, "..." ] },
+    { "group": "Direct\\Mini400", "rates": [ { "type": "symbol_group", "value": "metal", "ptsPerLot": 700 }, "..." ] },
     { "group": "Direct\\Mini10",  "rates": [ "..." ] },
     { "group": "Direct\\VIP1",    "rates": [ "..." ] },
     { "group": "Direct\\MIVIP",   "rates": [ "..." ] }
@@ -581,10 +582,10 @@ GROUP BY login_id</pre>
       "minHoldMinutes": 3,
       "creditDelayDays": 0,
       "expiryDays": 180,
-      "dailyMaxPoints": 2000,
+      "dailyMaxPoints": 20000,
       "tzMinutes": 420,
       "termsUrl": "https://.../terms.pdf",
-      "rateRange": { "min": 70.0, "max": 100.0 }
+      "rateRange": { "min": 400.0, "max": 1000.0 }
     },
     "today": {
       "periodKey": "2026-10-14",
@@ -604,11 +605,11 @@ GROUP BY login_id</pre>
         "group": "Direct\\Mini400",
         "lifetimeDeposit": 150.0,
         "rates": [
-          { "type": "symbol_group", "value": "energy", "ptsPerLot": 70.0 },
-          { "type": "symbol_group", "value": "forex",  "ptsPerLot": 70.0 },
-          { "type": "symbol_group", "value": "index",  "ptsPerLot": 70.0 },
-          { "type": "symbol_group", "value": "metal",  "ptsPerLot": 70.0 },
-          { "type": "any",          "value": "other",  "ptsPerLot": 70.0 }
+          { "type": "symbol_group", "value": "metal",  "ptsPerLot": 700.0 },
+          { "type": "symbol_group", "value": "energy", "ptsPerLot": 600.0 },
+          { "type": "symbol_group", "value": "forex",  "ptsPerLot": 500.0 },
+          { "type": "symbol_group", "value": "index",  "ptsPerLot": 400.0 },
+          { "type": "any",          "value": "other",  "ptsPerLot": 400.0 }
         ]
       },
       {
@@ -616,7 +617,7 @@ GROUP BY login_id</pre>
         "eligible": true,
         "group": "Direct\\VIP1",
         "lifetimeDeposit": 1250.0,
-        "rates": [ "...5 rows, ptsPerLot 90.0..." ]
+        "rates": [ "...metal 900, energy 800, forex 700, index 600, other 600..." ]
       },
       {
         "id": 31000003,
@@ -628,9 +629,9 @@ GROUP BY login_id</pre>
     ],
     "tiers": [
       { "group": "Direct\\Mini400", "rates": [ "...same 5 rows as account 31000001..." ] },
-      { "group": "Direct\\Mini10",  "rates": [ "...5 rows, ptsPerLot 80.0..." ] },
-      { "group": "Direct\\VIP1",    "rates": [ "...5 rows, ptsPerLot 90.0..." ] },
-      { "group": "Direct\\MIVIP",   "rates": [ "...5 rows, ptsPerLot 100.0..." ] }
+      { "group": "Direct\\Mini10",  "rates": [ "...metal 800, energy 700, forex 600, index 500, other 500..." ] },
+      { "group": "Direct\\VIP1",    "rates": [ "...metal 900, energy 800, forex 700, index 600, other 600..." ] },
+      { "group": "Direct\\MIVIP",   "rates": [ "...metal 1000, energy 900, forex 800, index 700, other 700..." ] }
     ]
   },
   "extraData": null,
@@ -652,10 +653,10 @@ GROUP BY login_id</pre></div></div><div class="specsrc" id="spec-api-guest" data
       "minHoldMinutes": 3,
       "creditDelayDays": 0,
       "expiryDays": 180,
-      "dailyMaxPoints": 2000,
+      "dailyMaxPoints": 20000,
       "tzMinutes": 420,
       "termsUrl": "https://.../terms.pdf",
-      "rateRange": { "min": 70.0, "max": 100.0 }
+      "rateRange": { "min": 400.0, "max": 1000.0 }
     },
     "today": {
       "periodKey": "2026-10-19",
@@ -753,7 +754,8 @@ LIMIT 1;</pre></div></div><div class="specsrc" id="spec-api-history" data-title=
   <tr><th style="width:34%">项目</th><th>值</th></tr>
   <tr><td>客户组</td><td><code>direct_client</code></td></tr>
   <tr><td>模式</td><td><code>in-day</code> (T+0)</td></tr>
-  <tr><td>每位客户每日上限</td><td>2.000 coin</td></tr>
+  <tr><td>每位客户每日上限</td><td>20.000 coin</td></tr>
+  <tr><td>每积分现金价值</td><td>0 (<code>cash_value_per_point_unit</code>)</td></tr>
   <tr><td>积分有效期</td><td>180 天</td></tr>
   <tr><td>最短持仓时间</td><td>180 秒</td></tr>
   <tr><td>展示</td><td>注册即展示（<code>signup</code>）</td></tr>
@@ -763,11 +765,11 @@ LIMIT 1;</pre></div></div><div class="specsrc" id="spec-api-history" data-title=
 </table>
 
 <h3>每手积分</h3>
-<p>每个 MT5 组有 5 行相同费率：<code>symbol_group</code> metal、forex、energy、index，以及一行 <code>any</code> = <code>other</code>（覆盖股票及其他所有品种）。</p>
-<table>
-  <tr><th style="width:34%">MT5 组</th><th>Coin / lot</th></tr>
-  <tr><td><code>Direct\Mini400</code></td><td>70</td></tr><tr><td><code>Direct\Mini10</code></td><td>80</td></tr><tr><td><code>Direct\VIP1</code></td><td>90</td></tr><tr><td><code>Direct\MIVIP</code></td><td>100</td></tr>
-</table>
+<p>2026-10-23 确定。每个 MT5 组 5 行：4 行 <code>symbol_group</code>（index、forex、energy、metal）和 1 行 <code>any</code> = <code>other</code>。"其他"列即 <code>any</code> 行：覆盖股票（引擎归为 <code>stocks</code> 组，该组没有单独的行）、加密货币及其他所有品种。不要把"其他"配置成 <code>symbol_group</code> other，否则股票将得 0 积分。</p>
+<div class="scroll"><table>
+  <tr><th style="width:24%">MT5 组</th><th>index</th><th>forex</th><th>energy</th><th>metal</th><th>其他</th></tr>
+  <tr><td><code>Direct\Mini400</code></td><td>400</td><td>500</td><td>600</td><td>700</td><td>400</td></tr><tr><td><code>Direct\Mini10</code></td><td>500</td><td>600</td><td>700</td><td>800</td><td>500</td></tr><tr><td><code>Direct\VIP1</code></td><td>600</td><td>700</td><td>800</td><td>900</td><td>600</td></tr><tr><td><code>Direct\MIVIP</code></td><td>700</td><td>800</td><td>900</td><td>1000</td><td>700</td></tr>
+</table></div>
 <p>其他组（包括 <code>1F\Direct\Mini10</code> 这类变体）有意不计积分。</p>
 
 <h3>账户等级（由前端保存）</h3>
@@ -788,7 +790,7 @@ LIMIT 1;</pre></div></div><div class="specsrc" id="spec-api-history" data-title=
 <h2>6. 变更记录</h2>
 <table>
   <tr><th style="width:14%">日期</th><th>内容</th><th style="width:16%">状态</th></tr>
-  <tr class="rvnew"><td>2026-10-19</td><td>G-1：游客接口。G-2：<code>tradingTask/get</code> 新增 <code>group</code>、<code>lifetimeDeposit</code>、<code>tiers</code>。</td><td><span class="pending">OPEN</span></td></tr><tr><td>2026-10-14</td><td>为前端在 UAT 准备测试数据：10 个客户、6 个接口，100% 一致。在 UAT 建立 HSB 配置。</td><td>已完成</td></tr><tr><td>2026-10-12</td><td>验收后引擎调整：超上限交易 = <code>-2</code>；<code>delayed</code> 模式发放时间 = 交易日 + N 天的 00:00；共用锁；MT5 组匹配不区分大小写。通过代码审查验收。</td><td>已完成</td></tr><tr><td>2026-10-12</td><td>在 <code>tradingTask/get</code> 中新增 <code>minHoldSeconds</code>、<code>termsUrl</code>、<code>rateRange</code>。</td><td>已完成，测试通过</td></tr><tr><td>2026-10-12</td><td>在 UAT 全量测试 2 个引擎 + 6 个接口：110/110 次接口调用一致，数据库数据逐列一致。</td><td>通过</td></tr><tr><td>2026-10-09</td><td>首次代码审查；问题已提交后端。</td><td>已修复</td></tr>
+  <tr><td>2026-10-23</td><td>HSB 新配置：按组别和品种类型每手 400–1000 积分，每日上限 20,000 积分，GMT+7，每积分现金价值 0。已在 UAT 重建并通过 App 接口验证。</td><td>已完成</td></tr><tr class="rvnew"><td>2026-10-19</td><td>G-1：游客接口。G-2：<code>tradingTask/get</code> 新增 <code>group</code>、<code>lifetimeDeposit</code>、<code>tiers</code>。</td><td><span class="pending">OPEN</span></td></tr><tr><td>2026-10-14</td><td>为前端在 UAT 准备测试数据：10 个客户、6 个接口，100% 一致。在 UAT 建立 HSB 配置。</td><td>已完成</td></tr><tr><td>2026-10-12</td><td>验收后引擎调整：超上限交易 = <code>-2</code>；<code>delayed</code> 模式发放时间 = 交易日 + N 天的 00:00；共用锁；MT5 组匹配不区分大小写。通过代码审查验收。</td><td>已完成</td></tr><tr><td>2026-10-12</td><td>在 <code>tradingTask/get</code> 中新增 <code>minHoldSeconds</code>、<code>termsUrl</code>、<code>rateRange</code>。</td><td>已完成，测试通过</td></tr><tr><td>2026-10-12</td><td>在 UAT 全量测试 2 个引擎 + 6 个接口：110/110 次接口调用一致，数据库数据逐列一致。</td><td>通过</td></tr><tr><td>2026-10-09</td><td>首次代码审查；问题已提交后端。</td><td>已修复</td></tr>
 </table>
 </section>
 
@@ -802,11 +804,11 @@ LIMIT 1;</pre></div></div><div class="specsrc" id="spec-api-history" data-title=
 </template>
 <template id="tpl-vi">
 <h1>HSB Loyalty – Trading Task &amp; Coin</h1>
-<p class="sub">Spec module Trading Task và các API coin. Cập nhật: 2026-10-19.</p>
+<p class="sub">Spec module Trading Task và các API coin. Cập nhật: 2026-10-23.</p>
 <nav class="tabs" role="tablist"><button type="button" role="tab" data-tab="overview" aria-selected="false">1. Tổng quan</button><button type="button" role="tab" data-tab="req" aria-selected="false">2. Yêu cầu đang mở</button><button type="button" role="tab" data-tab="api" aria-selected="false">3. API</button><button type="button" role="tab" data-tab="engine" aria-selected="false">4. Engine</button><button type="button" role="tab" data-tab="config" aria-selected="false">5. Cấu hình HSB</button><button type="button" role="tab" data-tab="log" aria-selected="false">6. Nhật ký</button></nav>
 <section class="panel" id="overview" role="tabpanel">
 <h2>1. Tổng quan</h2>
-<p>Module Trading Task của HSB Loyalty: khách giao dịch tài khoản thật, mỗi lot đóng được quy ra coin theo tỷ lệ cấu hình; coin vào ví và dùng để đổi quà. Trang này là spec chung giữa sản phẩm, backend và front-end, phản ánh hành vi code hiện tại (đã nghiệm thu trên UAT). Cập nhật: 2026-10-19.</p>
+<p>Module Trading Task của HSB Loyalty: khách giao dịch tài khoản thật, mỗi lot đóng được quy ra coin theo tỷ lệ cấu hình; coin vào ví và dùng để đổi quà. Trang này là spec chung giữa sản phẩm, backend và front-end, phản ánh hành vi code hiện tại (đã nghiệm thu trên UAT). Cập nhật: 2026-10-23.</p>
 
 <h3>Cách đọc trang</h3>
 <ul>
@@ -878,7 +880,7 @@ GROUP BY login_id</pre>
       "lifetimeDeposit": 0 }                 // NEW
   ],
   "tiers": [                                 // NEW
-    { "group": "Direct\\Mini400", "rates": [ { "type": "symbol_group", "value": "metal", "ptsPerLot": 70 }, "..." ] },
+    { "group": "Direct\\Mini400", "rates": [ { "type": "symbol_group", "value": "metal", "ptsPerLot": 700 }, "..." ] },
     { "group": "Direct\\Mini10",  "rates": [ "..." ] },
     { "group": "Direct\\VIP1",    "rates": [ "..." ] },
     { "group": "Direct\\MIVIP",   "rates": [ "..." ] }
@@ -920,10 +922,10 @@ GROUP BY login_id</pre>
       "minHoldMinutes": 3,
       "creditDelayDays": 0,
       "expiryDays": 180,
-      "dailyMaxPoints": 2000,
+      "dailyMaxPoints": 20000,
       "tzMinutes": 420,
       "termsUrl": "https://.../terms.pdf",
-      "rateRange": { "min": 70.0, "max": 100.0 }
+      "rateRange": { "min": 400.0, "max": 1000.0 }
     },
     "today": {
       "periodKey": "2026-10-14",
@@ -943,11 +945,11 @@ GROUP BY login_id</pre>
         "group": "Direct\\Mini400",
         "lifetimeDeposit": 150.0,
         "rates": [
-          { "type": "symbol_group", "value": "energy", "ptsPerLot": 70.0 },
-          { "type": "symbol_group", "value": "forex",  "ptsPerLot": 70.0 },
-          { "type": "symbol_group", "value": "index",  "ptsPerLot": 70.0 },
-          { "type": "symbol_group", "value": "metal",  "ptsPerLot": 70.0 },
-          { "type": "any",          "value": "other",  "ptsPerLot": 70.0 }
+          { "type": "symbol_group", "value": "metal",  "ptsPerLot": 700.0 },
+          { "type": "symbol_group", "value": "energy", "ptsPerLot": 600.0 },
+          { "type": "symbol_group", "value": "forex",  "ptsPerLot": 500.0 },
+          { "type": "symbol_group", "value": "index",  "ptsPerLot": 400.0 },
+          { "type": "any",          "value": "other",  "ptsPerLot": 400.0 }
         ]
       },
       {
@@ -955,7 +957,7 @@ GROUP BY login_id</pre>
         "eligible": true,
         "group": "Direct\\VIP1",
         "lifetimeDeposit": 1250.0,
-        "rates": [ "...5 rows, ptsPerLot 90.0..." ]
+        "rates": [ "...metal 900, energy 800, forex 700, index 600, other 600..." ]
       },
       {
         "id": 31000003,
@@ -967,9 +969,9 @@ GROUP BY login_id</pre>
     ],
     "tiers": [
       { "group": "Direct\\Mini400", "rates": [ "...same 5 rows as account 31000001..." ] },
-      { "group": "Direct\\Mini10",  "rates": [ "...5 rows, ptsPerLot 80.0..." ] },
-      { "group": "Direct\\VIP1",    "rates": [ "...5 rows, ptsPerLot 90.0..." ] },
-      { "group": "Direct\\MIVIP",   "rates": [ "...5 rows, ptsPerLot 100.0..." ] }
+      { "group": "Direct\\Mini10",  "rates": [ "...metal 800, energy 700, forex 600, index 500, other 500..." ] },
+      { "group": "Direct\\VIP1",    "rates": [ "...metal 900, energy 800, forex 700, index 600, other 600..." ] },
+      { "group": "Direct\\MIVIP",   "rates": [ "...metal 1000, energy 900, forex 800, index 700, other 700..." ] }
     ]
   },
   "extraData": null,
@@ -991,10 +993,10 @@ GROUP BY login_id</pre></div></div><div class="specsrc" id="spec-api-guest" data
       "minHoldMinutes": 3,
       "creditDelayDays": 0,
       "expiryDays": 180,
-      "dailyMaxPoints": 2000,
+      "dailyMaxPoints": 20000,
       "tzMinutes": 420,
       "termsUrl": "https://.../terms.pdf",
-      "rateRange": { "min": 70.0, "max": 100.0 }
+      "rateRange": { "min": 400.0, "max": 1000.0 }
     },
     "today": {
       "periodKey": "2026-10-19",
@@ -1092,7 +1094,8 @@ LIMIT 1;</pre></div></div><div class="specsrc" id="spec-api-history" data-title=
   <tr><th style="width:34%">Mục</th><th>Giá trị</th></tr>
   <tr><td>Nhóm khách</td><td><code>direct_client</code></td></tr>
   <tr><td>Chế độ</td><td><code>in-day</code> (T+0)</td></tr>
-  <tr><td>Trần mỗi khách mỗi ngày</td><td>2.000 coin</td></tr>
+  <tr><td>Trần mỗi khách mỗi ngày</td><td>20.000 coin</td></tr>
+  <tr><td>Giá trị tiền mỗi coin</td><td>0 (<code>cash_value_per_point_unit</code>)</td></tr>
   <tr><td>Hạn dùng coin</td><td>180 ngày</td></tr>
   <tr><td>Giữ lệnh tối thiểu</td><td>180 giây</td></tr>
   <tr><td>Hiển thị</td><td>Từ lúc đăng ký (<code>signup</code>)</td></tr>
@@ -1102,11 +1105,11 @@ LIMIT 1;</pre></div></div><div class="specsrc" id="spec-api-history" data-title=
 </table>
 
 <h3>Tỷ lệ coin mỗi lot</h3>
-<p>Mỗi nhóm MT5 có 5 dòng cùng giá: <code>symbol_group</code> metal, forex, energy, index và một dòng <code>any</code> = <code>other</code> (phủ cổ phiếu và mọi mã còn lại).</p>
-<table>
-  <tr><th style="width:34%">Nhóm MT5</th><th>Coin / lot</th></tr>
-  <tr><td><code>Direct\Mini400</code></td><td>70</td></tr><tr><td><code>Direct\Mini10</code></td><td>80</td></tr><tr><td><code>Direct\VIP1</code></td><td>90</td></tr><tr><td><code>Direct\MIVIP</code></td><td>100</td></tr>
-</table>
+<p>Chốt ngày 2026-10-23. Mỗi nhóm MT5 có 5 dòng: 4 dòng <code>symbol_group</code> (index, forex, energy, metal) và một dòng <code>any</code> = <code>other</code>. Cột "Còn lại" là dòng <code>any</code>: phủ cổ phiếu (engine xếp vào nhóm <code>stocks</code>, không có dòng riêng), crypto và mọi mã còn lại. Không đặt "còn lại" thành <code>symbol_group</code> other, vì như vậy cổ phiếu sẽ được 0 coin.</p>
+<div class="scroll"><table>
+  <tr><th style="width:24%">Nhóm MT5</th><th>index</th><th>forex</th><th>energy</th><th>metal</th><th>Còn lại</th></tr>
+  <tr><td><code>Direct\Mini400</code></td><td>400</td><td>500</td><td>600</td><td>700</td><td>400</td></tr><tr><td><code>Direct\Mini10</code></td><td>500</td><td>600</td><td>700</td><td>800</td><td>500</td></tr><tr><td><code>Direct\VIP1</code></td><td>600</td><td>700</td><td>800</td><td>900</td><td>600</td></tr><tr><td><code>Direct\MIVIP</code></td><td>700</td><td>800</td><td>900</td><td>1000</td><td>700</td></tr>
+</table></div>
 <p>Các nhóm khác, kể cả biến thể như <code>1F\Direct\Mini10</code>, cố ý không được tính coin.</p>
 
 <h3>Hạng tài khoản (front-end giữ)</h3>
@@ -1127,7 +1130,7 @@ LIMIT 1;</pre></div></div><div class="specsrc" id="spec-api-history" data-title=
 <h2>6. Nhật ký</h2>
 <table>
   <tr><th style="width:14%">Ngày</th><th>Nội dung</th><th style="width:16%">Trạng thái</th></tr>
-  <tr class="rvnew"><td>2026-10-19</td><td>G-1: API cho khách chưa đăng nhập. G-2: <code>tradingTask/get</code> thêm <code>group</code>, <code>lifetimeDeposit</code>, <code>tiers</code>.</td><td><span class="pending">OPEN</span></td></tr><tr><td>2026-10-14</td><td>Dựng dữ liệu test trên UAT cho front-end: 10 khách, 6 API, khớp 100%. Tạo cấu hình HSB trên UAT.</td><td>Hoàn tất</td></tr><tr><td>2026-10-12</td><td>Engine đổi sau nghiệm thu: lệnh vượt trần = <code>-2</code>; giờ hẹn phát của chế độ <code>delayed</code> = 00:00 ngày giao dịch + N; khoá chung; khớp nhóm MT5 không phân biệt hoa thường. Nghiệm thu bằng đọc code.</td><td>Hoàn tất</td></tr><tr><td>2026-10-12</td><td>Thêm <code>minHoldSeconds</code>, <code>termsUrl</code>, <code>rateRange</code> vào <code>tradingTask/get</code>.</td><td>Xong, test đạt</td></tr><tr><td>2026-10-12</td><td>Test toàn bộ 2 engine + 6 API trên UAT: 110/110 lần gọi API khớp, dữ liệu DB khớp từng cột.</td><td>Đạt</td></tr><tr><td>2026-10-09</td><td>Review code lần đầu, các lỗi đã gửi backend.</td><td>Đã sửa</td></tr>
+  <tr><td>2026-10-23</td><td>Cấu hình HSB mới: tỷ lệ 400–1000 coin/lot theo nhóm và loại sản phẩm, trần 20.000 coin/ngày, GMT+7, giá trị tiền mỗi coin 0. Đã dựng lại trên UAT và kiểm qua app API.</td><td>Hoàn tất</td></tr><tr class="rvnew"><td>2026-10-19</td><td>G-1: API cho khách chưa đăng nhập. G-2: <code>tradingTask/get</code> thêm <code>group</code>, <code>lifetimeDeposit</code>, <code>tiers</code>.</td><td><span class="pending">OPEN</span></td></tr><tr><td>2026-10-14</td><td>Dựng dữ liệu test trên UAT cho front-end: 10 khách, 6 API, khớp 100%. Tạo cấu hình HSB trên UAT.</td><td>Hoàn tất</td></tr><tr><td>2026-10-12</td><td>Engine đổi sau nghiệm thu: lệnh vượt trần = <code>-2</code>; giờ hẹn phát của chế độ <code>delayed</code> = 00:00 ngày giao dịch + N; khoá chung; khớp nhóm MT5 không phân biệt hoa thường. Nghiệm thu bằng đọc code.</td><td>Hoàn tất</td></tr><tr><td>2026-10-12</td><td>Thêm <code>minHoldSeconds</code>, <code>termsUrl</code>, <code>rateRange</code> vào <code>tradingTask/get</code>.</td><td>Xong, test đạt</td></tr><tr><td>2026-10-12</td><td>Test toàn bộ 2 engine + 6 API trên UAT: 110/110 lần gọi API khớp, dữ liệu DB khớp từng cột.</td><td>Đạt</td></tr><tr><td>2026-10-09</td><td>Review code lần đầu, các lỗi đã gửi backend.</td><td>Đã sửa</td></tr>
 </table>
 </section>
 
